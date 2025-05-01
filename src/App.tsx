@@ -1,12 +1,18 @@
+// React Imports
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import { ProtectedRoute } from './auth/ProtectedRoute';
-import Dashboard from './pages/Dashboard'
+// Pages
+import { Dashboard } from './pages/Dashboard'
 import Login from './pages/Login';
-import Tool from './Tool';
+import { Tool } from './pages/Tool';
+
+// Components
+import { ProtectedRoute } from './auth/ProtectedRoute';
 import NavBar from './components/NavBar';
 
+// Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
 
 function App() {
   return (
@@ -29,7 +35,7 @@ function App() {
               <Tool />
             </ProtectedRoute>
           } />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

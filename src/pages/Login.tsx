@@ -16,7 +16,7 @@ function Login() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/smartsheet-instances');
+        const response = await fetch('https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/smartsheet-instances');
         const instanceData = await response.json();
         setInstances(instanceData);
       } catch (error) {

@@ -1,16 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User } from '../types/user';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-}
-
-interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,14 +14,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/me', {
-      credentials: 'include',
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) setUser(data);
+    const cachedUser = sessionStorage.getItem('user');
+    if (cachedUser) {
+      setUser(JSON.parse(cachedUser));
+      setLoading(false);
+    } else {
+      fetch('https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/me', {
+        credentials: 'include',
       })
-      .finally(() => setLoading(false));
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            setUser(data);
+            sessionStorage.setItem('user', JSON.stringify(data));
+          }
+        })
+        .finally(() => setLoading(false));
+    }
   }, []);
 
   return (
