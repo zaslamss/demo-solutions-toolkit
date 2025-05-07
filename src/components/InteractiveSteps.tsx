@@ -2,186 +2,13 @@
 import { useState } from "react";
 import { Button, Card, Form, InputGroup } from "react-bootstrap";
 import { EditableGrid } from "./EditableGrid";
+import { Step } from "../types";
 
-// const steps = [
-//   {
-//     "id": "getSheetId",
-//     "title": "Sheet Information",
-//     "description": "Please enter the ID of the sheet you'd like to update and select whether you'd like to add new rows or delete & replace rows with new data.",
-//     "type": "form",
-//     "nextStepId": "getUseCasePrompt",
-//     "fields": [
-//       {
-//         "id": "sheetId",
-//         "type": "input",
-//         "label": "Sheet ID",
-//         "required": true
-//       }
-//     ]
-//   },
-//   {
-//     "id": "getUseCasePrompt",
-//     "title": "Enter Your Use Case",
-//     "description": "Please enter the prompt you would like to send to Google Gemini to create your columns.",
-//     "type": "apiPrompt",
-//     "nextStepId": "confirmColumns",
-//     "fields": [
-//       {
-//         "id": "prompt",
-//         "type": "textarea",
-//         "label": "Prompt",
-//         "required": true
-//       }
-//     ],
-//     // TODO: Figure out how to add additional context to the gemini prompt
-//     "onSubmit": {
-//       "action": "callApi",
-//       "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/gemini-use-case",
-//       "promptContext": "Please provide a list of columns that would be useful for a {prompt} use case.",
-//       "method": "POST",
-//       "inputMapping": {
-//         "prompt": "prompt",
-//       },
-//       "storeResponseAs": "geminiColumns"
-//     }
-//   },
-//   {
-//     "id": "confirmColumns",
-//     "title": "Confirm Columns",
-//     "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
-//     "type": "editableGrid",
-//     "dataSource": "geminiColumns",
-//     "nextStepId": "getMockDataPrompt",
-//   },
-//   {
-//     "id": "getMockDataPrompt",
-//     "title": "Enter a prompt for mock data",
-//     "description": "Please enter the prompt you would like to send to Google Gemini to create your mock data.",
-//     "type": "apiPrompt",
-//     "nextStepId": "confirmGrid",
-//     "fields": [
-//       {
-//         "id": "mockDataPrompt",
-//         "type": "textarea",
-//         "label": "Prompt",
-//         "required": true
-//       }
-//     ],
-//     "onSubmit": {
-//       "action": "callApi",
-//       "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/gemini-use-case",
-//       "promptContext": "Please provide a list of rows that would be useful for a {mockDataPrompt} use case.",
-//       "method": "POST",
-//       "inputMapping": {
-//         "prompt": "mockDataPrompt",
-//         "columns": "createdColumns"
-//       },
-//       "storeResponseAs": "mockData"
-//     }
-//   },
-//   {
-//     "id": "confirmGrid",
-//     "title": "Confirm and Create Sheet",
-//     "type": "viewableGrid",
-//     "dataSource": "mockData",
-//     "description": "Review the generated rows below. Click 'Submit' to proceed.",
-//     "onSubmit": {
-//       "action": "callApi",
-//       "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/actions/create-sheet",
-//       "method": "POST",
-//       "inputMapping": {
-//         "sheetId": "getSheetId.sheetId",
-//         "rows": "confirmGrid"
-//       }
-//     }
-//   }
-// ]
+interface InteractiveStepsProps {
+  steps: Step[];
+}
 
-const steps = [
-  {
-    "id": "getToolInfo",
-    "title": "Tool Basics",
-    "description": "Enter the basic information about your tool. This will be used to create the tool.",
-    "type": "form",
-    "nextStepId": "getPrompt",
-    "fields": [
-      {
-        "id": "toolName",
-        "type": "input",
-        "label": "Name",
-        "required": true
-      },
-      {
-        "id": "toolSlug",
-        "type": "input",
-        "label": "Slug",
-        "required": true
-      },
-      {
-        "id": "toolSummary",
-        "type": "textarea",
-        "label": "Summary",
-        "required": true
-      }
-    ]
-  },
-  {
-    "id": "getPrompt",
-    "title": "Enter Your Tool Idea",
-    "description": "Enter information about the tool you'd like to create. Make sure to define each step as detailed as you can. Include information about the 'title', 'description', and what this step is doing.",
-    "type": "prompt",
-    "nextStepId": "confirmPrompt",
-    "fields": [
-      {
-        "id": "prompt",
-        "type": "textarea",
-        "label": "Prompt",
-        "required": true
-      }
-    ],
-    "onSubmit": {
-      "action": "callApi",
-      "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/gemini-use-case",
-      "promptContext": "Please provide a list of steps that would be useful for a {prompt} use case.",
-      "method": "POST",
-      "inputMapping": {
-        "prompt": "prompt",
-      },
-      "storeResponseAs": "toolSteps"
-    }
-  },
-  {
-    "id": "confirmPrompt",
-    "title": "Confirm Steps",
-    "description": "Review the generated steps below. You can edit the names and types of the steps. Click 'Next' to proceed.",
-    "type": "editableGrid",
-    "dataSource": "toolSteps",
-    "nextStepId": "getMockDataPrompt",
-  },
-  {
-    "id": "uploadFiles",
-    "title": "Upload your Backend Zip File",
-    "description": "Upload the zip file containing your backend code. This will be used to create the tool.",
-    "type": "form",
-    "fields": [
-      {
-        "id": "backendZip",
-        "type": "upload",
-        "label": "",
-        "required": true
-      }
-    ],
-    "nextStepId": "confirmCreateTool",
-  },
-  {
-    "id": "confirmCreateTool",
-    "title": "Create Tool",
-    "description": "Click 'Submit' to create your tool.",
-  }
-
-]
-
-export const InteractiveSteps = () => {
+export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [responseData, setResponseData] = useState<Record<string, any>>({});
@@ -195,7 +22,7 @@ export const InteractiveSteps = () => {
 
       // Build request body from inputMapping
       const body: Record<string, any> = {};
-      for (const [apiKey, formPath] of Object.entries(inputMapping)) {
+      for (const [apiKey, formPath] of Object.entries(inputMapping || {})) {
         const [stepId, fieldId] = formPath.includes('.') ? formPath.split('.') : [step.id, formPath];
         body[apiKey] = formData[stepId]?.[fieldId];
       }

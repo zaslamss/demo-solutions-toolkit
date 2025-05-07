@@ -74,3 +74,28 @@ export interface ToolProps {
     form: ToolFieldProps[];
     runs?: Run[];
 }
+
+
+export interface Step {
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    nextStepId?: string;
+    fields?: {
+      id: string;
+      type: string;
+      label: string;
+      required?: boolean;
+      options?: { value: string; label: string }[];
+    }[];
+    dataSource?: string;
+    onSubmit?: {
+      action: string;
+      apiEndpoint: string;
+      promptContext?: string;
+      method: string;
+      inputMapping?: Record<string, any>;
+      storeResponseAs?: string;
+    };
+  }
