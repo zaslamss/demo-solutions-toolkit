@@ -24,17 +24,17 @@ function App() {
         <Route
           path="/"
           element={
-            // <ProtectedRoute>
+            <ProtectedRoute>
               <Dashboard />
-            // </ProtectedRoute>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/tools/:slug"
           element={
-            // <ProtectedRoute>
+            <ProtectedRoute>
               <Tool />
-            // </ProtectedRoute>
+            </ProtectedRoute>
           } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
