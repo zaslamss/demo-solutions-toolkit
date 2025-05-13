@@ -21,14 +21,14 @@ export default function NavBar() {
   }
 
   return (
-    <Navbar expand="sm" className="bg-body-secondary mb-3">
+    <Navbar expand="sm" className="navbar-background primary mb-3">
       <Container fluid>
         <Navbar.Brand href="/">Demo Solutions Toolkit</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         {isAuthenticated && user ? (
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <NavDropdown title={user.email} id="basic-nav-dropdown">
+              <NavDropdown title={"Hi, Zara"} id="basic-nav-dropdown">
                 <NavDropdown.Item href="#settings">Settings</NavDropdown.Item>
                 <NavDropdown.Item onClick={handleLogout}>Log Out</NavDropdown.Item>
               </NavDropdown>

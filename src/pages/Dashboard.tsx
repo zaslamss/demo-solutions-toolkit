@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 // Bootstrap Imports
-import { Container } from "react-bootstrap";
+import { Container, Spinner } from "react-bootstrap";
 
 // Components
 import { ToolCard } from "../components/ToolCard";
@@ -34,7 +34,7 @@ export const Dashboard = () => {
         return (
           <ToolCard key={tool.id} tool={tool} />
         )
-      }): <h6>Loading...</h6>}
+      }): <Spinner animation="border" variant="primary" />}
     </Container>
   )
 }

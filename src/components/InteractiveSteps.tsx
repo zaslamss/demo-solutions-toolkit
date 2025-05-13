@@ -89,7 +89,7 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
           return (
             <Card style={{ width: '65rem' }} className="h-100 mb-3" key={step.id}>
               <Card.Body>
-                <Card.Title>{step.title}</Card.Title>
+                <Card.Title><b>{step.title}</b></Card.Title>
                 <p>{step.description}</p>
                 {
                   step?.fields?.map((field) => (
@@ -150,6 +150,7 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
                     disabled={!isCurrentStep}
                   />
                 )}
+                <div className="d-grid gap-2">
                 {step.nextStepId ? (
                   <Button variant="primary" type="button" className="float-end" onClick={handleNextStep} disabled={!isCurrentStep}>
                     Next
@@ -158,6 +159,7 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
                   <Button variant="primary" type="button" className="float-end" disabled={!isCurrentStep} onClick={() => console.log("Submit data", formData)}>
                     Submit
                   </Button>)}
+                </div>
               </Card.Body>
             </Card>
           )

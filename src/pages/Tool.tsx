@@ -1,7 +1,7 @@
 // React + Third Party Libraries
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Accordion, Button, Container } from "react-bootstrap";
+import { Accordion, Button, Container, Spinner } from "react-bootstrap";
 
 // Components
 import { DynamicFormModal } from "../components/DynamicFormModal";
@@ -62,8 +62,8 @@ const steps: Record<string, Step[]> = {
   "Create a Tool": [
     {
       "id": "getToolInfo",
-      "title": "Tool Basics",
-      "description": "Enter the basic information about your tool. This will be used to create the tool.",
+      "title": "Tool Overview",
+      "description": "Enter the name of your tool along with a clear, user-friendly description that explains its purpose.",
       "type": "form",
       "nextStepId": "getPrompt",
       "fields": [
@@ -83,10 +83,9 @@ const steps: Record<string, Step[]> = {
     },
     {
       "id": "getPrompt",
-      "title": "Enter Your Tool Idea",
-      "description": "Enter information about the tool you'd like to create. Make sure to define each step as detailed as you can. Include information about the 'title', 'description', and what this step is doing.",
+      "title": "Describe Your Tool",
+      "description": "Provide details about the tool you want to create. Be as specific as possible when describing each step—include the step's title, a clear description, and an explanation of its purpose.",
       "type": "prompt",
-      "nextStepId": "confirmPrompt",
       "fields": [
         {
           "id": "prompt",
@@ -105,37 +104,7 @@ const steps: Record<string, Step[]> = {
         },
         "storeResponseAs": "toolSteps"
       }
-    },
-    {
-      "id": "confirmPrompt",
-      "title": "Confirm Steps",
-      "description": "Review the generated steps below. You can edit the names and types of the steps. Click 'Next' to proceed.",
-      "type": "editableGrid",
-      "dataSource": "toolSteps",
-      "nextStepId": "getMockDataPrompt",
-    },
-    {
-      "id": "uploadFiles",
-      "title": "Upload your Backend Zip File",
-      "description": "Upload the zip file containing your backend code. This will be used to create the tool.",
-      "type": "form",
-      "fields": [
-        {
-          "id": "backendZip",
-          "type": "upload",
-          "label": "",
-          "required": true
-        }
-      ],
-      "nextStepId": "confirmCreateTool",
-    },
-    {
-      "id": "confirmCreateTool",
-      "title": "Create Tool",
-      "description": "Click 'Submit' to create your tool.",
-      "type": "info"
     }
-
   ],
   "GridSnap": [
     {
@@ -150,7 +119,8 @@ const steps: Record<string, Step[]> = {
           "type": "input",
           "label": "Sheet ID",
           "required": true
-        }
+        },
+
       ]
     },
     {
@@ -295,12 +265,12 @@ export const Tool = () => {
               </Accordion>
             </>
           )}
-          <h4 className="mb-3 fw-bold">{tool.name}</h4>
+          <h4 className="mb-3 fw-bold text-primary">{tool.name}</h4>
           <p>{tool.summary}</p>
           <InteractiveSteps steps={steps[tool.name]} />
         </>
 
-      ) : <h6>Loading...</h6>}
+      ) : <Spinner animation="border" variant="primary" />}
     </Container>
   )
 }

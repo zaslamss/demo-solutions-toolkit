@@ -11,8 +11,9 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import NavBar from './components/NavBar';
 
 // Styles
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './App.css';
+import './Styles.scss'
+// import 'bootstrap/dist/css/bootstrap.min.css';
+// import './App.css';
 
 function App() {
   return (
@@ -23,17 +24,17 @@ function App() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <Dashboard />
-            </ProtectedRoute>
+            // </ProtectedRoute>
           }
         />
         <Route
           path="/tools/:slug"
           element={
-            <ProtectedRoute>
+            // <ProtectedRoute>
               <Tool />
-            </ProtectedRoute>
+            // </ProtectedRoute>
           } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
