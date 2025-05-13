@@ -12,9 +12,6 @@
   "dependencies": {
     "@aws-amplify/api-rest": "^4.0.73",
     "@aws-amplify/auth": "^6.11.4",
-    "@smartsheet/design-tokens-react": "^4.1.5",
-    "@smartsheet/lodestar-card": "^4.0.50",
-    "@smartsheet/lodestar-core": "^5.32.0",
     "add": "^2.0.6",
     "aws-amplify": "^6.13.4",
     "bootstrap": "^5.3.3",
@@ -37,5 +34,6 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.22.0",
     "vite": "^6.1.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
