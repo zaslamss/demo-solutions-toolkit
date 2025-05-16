@@ -16,7 +16,7 @@ export const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/tools', {
+        const response = await fetch('https://devapi.mbfcorp.tools/api/tools', {
           credentials: 'include',
         });
         const toolData = await response.json();

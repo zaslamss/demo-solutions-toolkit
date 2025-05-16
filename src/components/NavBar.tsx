@@ -9,7 +9,7 @@ export default function NavBar() {
 
   const handleLogout = async () => {
     try {
-      await fetch('https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/logout', {
+      await fetch('https://devapi.mbfcorp.tools/api/logout', {
         method: 'POST',
         credentials: 'include',
       });

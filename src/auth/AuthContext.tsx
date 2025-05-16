@@ -19,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(JSON.parse(cachedUser));
       setLoading(false);
     } else {
-      fetch('https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/me', {
+      fetch('https://devapi.mbfcorp.tools/api/me', {
         credentials: 'include',
       })
         .then((res) => (res.ok ? res.json() : null))

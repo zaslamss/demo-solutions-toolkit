@@ -196,7 +196,7 @@ export const Tool = () => {
     if (slug) {
       const fetchData = async () => {
         try {
-          const response = await fetch(`https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/tools/${slug}`, {
+          const response = await fetch(`https://devapi.mbfcorp.tools/api/tools/${slug}`, {
             credentials: 'include',
           });
           const toolData = await response.json();
@@ -216,7 +216,7 @@ export const Tool = () => {
     const fetchData = async () => {
       try {
         setShowFormModal(false);
-        const response = await fetch('https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/tools/demo-customizer', {
+        const response = await fetch('https://devapi.mbfcorp.tools/api/tools/demo-customizer', {
           method: "POST",
           body: JSON.stringify({
             function: `toolkit-${slug}`,
