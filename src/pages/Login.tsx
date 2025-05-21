@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Container } from "react-bootstrap";
+import { Button, Card, Container, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 interface SmartsheetInstance {
@@ -22,18 +22,24 @@ function Login() {
       } catch (error) {
         console.log("Error: ", error)
       };
-
     }
     fetchData();
   }, []);
 
   return (
-    <Container fluid>
-      <p>Welcome to the Demo Solutions Toolkit. <br></br>This site is available to all Smartsheet employees. <br></br>You must log in with your @smartsheet.com or @demo.mbfcorp.com email address to access this site. <br></br>Please do not share this with customers.</p>
-      <p>Select the Smartsheet Instance you'd like to log in with:</p>
-      {instances.map((instance) => (
-        <Link to={`${instance.authUrl}${instance.id}`} key={instance.id}><Button>{`Log in with ${instance.name}`}</Button></Link>
-      ))}
+    <Container fluid style={{ background: 'linear-gradient(90deg, #EAE3FF 0%, #F2F6FF 100%)', minHeight: '100vh' }} className="vh-100 d-flex flex-column justify-content-center align-items-center">
+      <Card className="p-4 shadow text-center">
+        <Card.Title>WELCOME 👋</Card.Title>
+        <Card.Text>The Demo Solutions Toolkit is available to all <strong>Smartsheet</strong> employees only.</Card.Text>
+        <Card.Text>Please log in with your corporate or MBFCorp email to continue.</Card.Text>
+        {instances.length > 0 ? instances.map((instance) => {
+          if (instance.abbreviation === 'us') {
+            return (
+              <Link className="d-grid" style={{textDecoration: 'none'}} to={`${instance.authUrl}${instance.id}`} key={instance.id}><Button>Log in with Smartsheet</Button></Link>
+            )
+          }
+        }) : <div><Spinner animation="border" variant="primary" /></div>}
+      </Card>
     </Container>
   )
 }

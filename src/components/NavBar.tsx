@@ -1,7 +1,4 @@
-// Bootstrap Imports
 import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
-
-// Contexts
 import { useAuth } from "../auth/AuthContext";
 
 export default function NavBar() {
@@ -28,7 +25,7 @@ export default function NavBar() {
         {isAuthenticated && user ? (
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <NavDropdown title={"Hi, Zara"} id="basic-nav-dropdown">
+              <NavDropdown title={`Hi, ${user.firstName} 👋`} id="basic-nav-dropdown">
                 <NavDropdown.Item href="#settings">Settings</NavDropdown.Item>
                 <NavDropdown.Item onClick={handleLogout}>Log Out</NavDropdown.Item>
               </NavDropdown>

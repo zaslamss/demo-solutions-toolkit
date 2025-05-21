@@ -18,13 +18,13 @@ import './Styles.scss'
 function App() {
   return (
     <>
-      <NavBar />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
           path="/"
           element={
             <ProtectedRoute>
+              <NavBar />
               <Dashboard />
             </ProtectedRoute>
           }
@@ -33,6 +33,7 @@ function App() {
           path="/tools/:slug"
           element={
             <ProtectedRoute>
+              <NavBar />
               <Tool />
             </ProtectedRoute>
           } />
