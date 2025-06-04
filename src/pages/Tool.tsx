@@ -59,53 +59,6 @@ const runs: Run[] = [
 ]
 
 const steps: Record<string, Step[]> = {
-  "Create a Tool": [
-    {
-      "id": "getToolInfo",
-      "title": "Tool Overview",
-      "description": "Enter the name of your tool along with a clear, user-friendly description that explains its purpose.",
-      "type": "form",
-      "nextStepId": "getPrompt",
-      "fields": [
-        {
-          "id": "toolName",
-          "type": "input",
-          "label": "Name",
-          "required": true
-        },
-        {
-          "id": "toolSummary",
-          "type": "textarea",
-          "label": "Summary",
-          "required": true
-        }
-      ]
-    },
-    {
-      "id": "getPrompt",
-      "title": "Describe Your Tool",
-      "description": "Provide details about the tool you want to create. Be as specific as possible when describing each step—include the step's title, a clear description, and an explanation of its purpose.",
-      "type": "prompt",
-      "fields": [
-        {
-          "id": "prompt",
-          "type": "textarea",
-          "label": "Prompt",
-          "required": true
-        }
-      ],
-      "onSubmit": {
-        "action": "callApi",
-        "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/gemini-use-case",
-        "promptContext": "Please provide a list of steps that would be useful for a {prompt} use case.",
-        "method": "POST",
-        "inputMapping": {
-          "prompt": "prompt",
-        },
-        "storeResponseAs": "toolSteps"
-      }
-    }
-  ],
   "GridSnap": [
     {
       "id": "getSheetId",
@@ -152,7 +105,7 @@ const steps: Record<string, Step[]> = {
       "id": "confirmColumns",
       "title": "Confirm Columns",
       "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
-      "type": "editableGrid",
+      "type": "grid",
       "dataSource": "columns",
       "nextStepId": "confirmGrid",
       "onSubmit": {
@@ -169,7 +122,7 @@ const steps: Record<string, Step[]> = {
     {
       "id": "confirmGrid",
       "title": "Confirm and Create Sheet",
-      "type": "editableGrid",
+      "type": "grid",
       "dataSource": "gridData",
       "description": "Review the generated rows below. Click 'Submit' to proceed.",
       "onSubmit": {
@@ -182,6 +135,115 @@ const steps: Record<string, Step[]> = {
         }
       }
     }
+  ],
+  "SheetGenie": [
+    {
+      "id": "getSheetId",
+      "title": "Sheet Information",
+      "description": "Please enter the ID of the sheet you'd like to update and select whether you'd like to add new rows or delete & replace rows with new data.",
+      "type": "form",
+      "nextStepId": "getImage",
+      "fields": [
+        {
+          "id": "sheetId",
+          "type": "input",
+          "label": "Sheet ID",
+          "required": true
+        },
+      ],
+      "onSubmit": {
+        "action": "getSheetInfo",
+        "storeResponseAs": "sheetInfo"
+      }
+    },
+    {
+      "id": "getUseCase",
+      "title": "Describe Your Use Case",
+      "description": "Describe the use case for which you'd like to generate mock data for. This will be used to generate the column names and data types.",
+      "type": "prompt",
+      "nextStepId": "confirmColumns",
+      "fields": [
+        {
+          "id": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "required": true
+        }
+      ],
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+        "promptContext": "I am creating a Smartsheet sheet for a {prompt} use case. Please provide a list of column headers that would be useful information for me to track on this sheet.",
+        "method": "POST",
+        "inputMapping": {
+          "prompt": "prompt",
+        },
+        "storeResponseAs": "columns"
+      }
+    },
+    {
+      "id": "confirmColumns",
+      "title": "Confirm Columns",
+      "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
+      "type": "grid",
+      "editable": true,
+      "dataSource": "columns",
+      "nextStepId": "getDataPrompt",
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
+        "method": "POST",
+        "inputMapping": {
+          "sheet_id": "getSheetId.sheetId",
+          "columns": "confirmColumns.rows",
+        },
+        "storeResponseAs": "columnsCreated"
+      }
+    },
+    {
+      "id": "getDataPrompt",
+      "title": "Describe Your Data",
+      "description": "Describe the data you'd like to generate for your sheet. This will be used to generate the rows of data.",
+      "type": "prompt",
+      "nextStepId": "confirmData",
+      "fields": [
+        {
+          "id": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "required": true
+        }
+      ],
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. Dates should be formatted as YYYY-MM-DD (ISO 8601). CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "method": "POST",
+        "inputMapping": {
+          "columns": "confirmColumns.rows",
+          "prompt": "prompt",
+        },
+        "storeResponseAs": "mockData"
+      }
+    },
+    {
+      "id": "confirmData",
+      "title": "Confirm and Create Sheet",
+      "type": "grid",
+      "editable": false,
+      "dataSource": "mockData",
+      "description": "Review the generated rows below. Click 'Submit' to proceed.",
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/tools/sheetgenie",
+        "method": "POST",
+        "inputMapping": {
+          "sheet_id": "getSheetId.sheetId",
+          "rows": "confirmData.rows",
+        },
+        "storeResponseAs": "rowsCreated"
+      }
+    },
   ]
 }
 

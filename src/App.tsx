@@ -3,12 +3,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Pages
 import { Dashboard } from './pages/Dashboard'
-import Login from './pages/Login';
+import { Login } from './pages/Login';
 import { Tool } from './pages/Tool';
 
 // Components
 import { ProtectedRoute } from './auth/ProtectedRoute';
-import NavBar from './components/NavBar';
+import { NavBar } from './components/NavBar';
 
 // Styles
 import './Styles.scss'

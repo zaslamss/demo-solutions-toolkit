@@ -10,7 +10,7 @@ interface SmartsheetInstance {
   apiBase: string;
 }
 
-function Login() {
+export const Login = () => {
   const [instances, setInstances] = useState<SmartsheetInstance[]>([]);
 
   useEffect(() => {
@@ -43,5 +43,3 @@ function Login() {
     </Container>
   )
 }
-
-export default Login

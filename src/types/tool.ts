@@ -80,9 +80,10 @@ export interface Step {
     id: string;
     title: string;
     description: string;
-    type: string;
+    type: "form" | "prompt" | "grid";
     nextStepId?: string;
-    fields?: {
+    editable?: boolean; // property for grid
+    fields?: { // property for form
       id: string;
       type: string;
       label: string;
@@ -92,9 +93,9 @@ export interface Step {
     dataSource?: string;
     onSubmit?: {
       action: string;
-      apiEndpoint: string;
+      apiEndpoint?: string;
       promptContext?: string;
-      method: string;
+      method?: string;
       inputMapping?: Record<string, any>;
       storeResponseAs?: string;
     };

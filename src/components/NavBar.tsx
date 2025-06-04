@@ -1,7 +1,7 @@
 import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
 import { useAuth } from "../auth/AuthContext";
 
-export default function NavBar() {
+export const NavBar = () => {
   const { user, isAuthenticated } = useAuth();
 
   const handleLogout = async () => {

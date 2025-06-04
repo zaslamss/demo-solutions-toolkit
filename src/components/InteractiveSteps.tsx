@@ -1,22 +1,22 @@
-// Bootstrap Imports
 import { useState } from "react";
 import { Button, Card, Form, InputGroup } from "react-bootstrap";
-import { EditableGrid } from "./EditableGrid";
 import { Step } from "../types";
+import { Grid } from "./Grid";
 
 interface InteractiveStepsProps {
   steps: Step[];
 }
 
 export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
+  // Initialize state for current step index, form data, and response data
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [responseData, setResponseData] = useState<Record<string, any>>({});
 
+  // Function to handle the next step logic
   const handleNextStep = async () => {
     const step = steps[currentStepIndex];
 
-    // If the step is an API prompt, trigger API call
     if (step.onSubmit?.action === "callApi") {
       const { apiEndpoint, method, inputMapping, storeResponseAs } = step.onSubmit;
 
@@ -26,13 +26,34 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
         const [stepId, fieldId] = formPath.includes('.') ? formPath.split('.') : [step.id, formPath];
         body[apiKey] = formData[stepId]?.[fieldId];
       }
+      console.log("Request body for API call:", body);
+
+      // Make API call
+      if (!apiEndpoint) {
+        console.error("API endpoint is not defined");
+        return;
+      }
+
+      let data: Record<string, any> = {};
 
       try {
-        const res = await fetch(apiEndpoint, {
+        const fetchOptions: RequestInit = {
           method: method || 'POST',
           credentials: 'include',
-          body: JSON.stringify(body),
-        });
+        };
+
+        if (step.type === "prompt") {
+          data.promptContext = step.onSubmit.promptContext || "",
+          data.data = body;
+        } else {
+          data = body;
+        }
+
+        if (['POST', 'PUT'].includes((method || 'POST').toUpperCase())) {
+          fetchOptions.body = JSON.stringify(data);
+        }
+
+        const res = await fetch(apiEndpoint, fetchOptions);
 
         if (!res.ok) throw new Error(`API call failed with status ${res.status}`);
         const result = await res.json();
@@ -43,19 +64,18 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
             ...prev,
             [storeResponseAs]: result
           }));
-          // Prepopulate formData here if the next step is an editableGrid
+          // Prepopulate formData here if the next step is a grid
           const nextStep = steps[currentStepIndex + 1];
-          if (nextStep?.type === "editableGrid" && nextStep.dataSource === storeResponseAs) {
-            const initialRows = result.rows.map((row: any[]) =>
-              row.reduce((acc: any, field: any) => {
-                acc[field.id] = field.value || "";
-                return acc;
-              }, {})
-            );
-
+          if (nextStep?.type === "grid" && nextStep.dataSource === storeResponseAs) {
             setFormData(prev => ({
               ...prev,
-              [nextStep.id]: { rows: initialRows }
+              [nextStep.id]: { rows: result.rows }
+            }));
+          }
+          if (step.type === "grid") {
+            setFormData(prev => ({
+              ...prev,
+              [nextStep.id]: { rows: result.rows }
             }));
           }
         }
@@ -65,12 +85,38 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
       }
     }
 
+    if (step.onSubmit?.action === "getSheetInfo") {
+      const { storeResponseAs } = step.onSubmit;
+      const sheetId = formData[step.id]?.sheetId;
+      if (!sheetId) {
+        console.error("Sheet ID is not defined");
+        return;
+      }
+      try {
+        const res = await fetch(`https://devapi.mbfcorp.tools/sheet/${sheetId}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error(`API call failed with status ${res.status}`);
+        const result = await res.json();
+        // Store the result using the alias from config
+        if (storeResponseAs) {
+          setResponseData(prev => ({
+            ...prev,
+            [storeResponseAs]: result
+          }));
+        }} catch (error) {
+        console.error("API call failed:", error);
+      }
+    }
+
     // Move to next step
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     }
   };
 
+  // Function to handle input changes in the form
   const handleInputChange = (stepId: string, fieldId: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -87,7 +133,7 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
         steps.slice(0, currentStepIndex + 1).map((step, index) => {
           const isCurrentStep = index === currentStepIndex;
           return (
-            <Card style={{ width: '65rem' }} className="h-100 mb-3" key={step.id}>
+            <Card style={{ width: '100%' }} className="h-100 mb-3" key={step.id}>
               <Card.Body>
                 <Card.Title><b>{step.title}</b></Card.Title>
                 <p>{step.description}</p>
@@ -129,26 +175,15 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
                     </div>
                   ))
                 }
-                {step.type === "confirmGrid" && (
-                  <div>
-                    <h5>Confirmed Data:</h5>
-                    <pre>{JSON.stringify(formData, null, 2)}</pre>
-                    {responseData.geminiColumns && (
-                      <div>
-                        <h5>API Response:</h5>
-                        <pre>{JSON.stringify(responseData.geminiColumns, null, 2)}</pre>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {step.type === "editableGrid" && step.dataSource && responseData[step.dataSource] && (
-                  <EditableGrid
+                {step.type === "grid" && step.dataSource && responseData[step.dataSource] && (
+                  <Grid
                     gridData={responseData[step.dataSource]}
+                    editable={step.editable}
                     stepId={step.id}
                     formData={formData}
                     setFormData={setFormData}
                     disabled={!isCurrentStep}
-                  />
+                    />
                 )}
                 <div className="d-grid gap-2">
                 {step.nextStepId ? (

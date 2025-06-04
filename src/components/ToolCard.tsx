@@ -1,10 +1,5 @@
-// React Imports
 import { Link } from "react-router-dom";
-
-// Bootstrap Imports
 import { Card } from "react-bootstrap";
-
-// Types Import
 import { ToolSummaryProps } from "../types";
 
 interface ToolCardProps {
