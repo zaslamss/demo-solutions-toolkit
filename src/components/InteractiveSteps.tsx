@@ -72,7 +72,7 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
               [nextStep.id]: { rows: result.rows }
             }));
           }
-          if (step.type === "grid") {
+          if (step.type === "grid" && !storeResponseAs) {
             setFormData(prev => ({
               ...prev,
               [nextStep.id]: { rows: result.rows }
@@ -191,7 +191,7 @@ export const InteractiveSteps = ({ steps }: InteractiveStepsProps) => {
                     Next
                   </Button>
                 ) : (
-                  <Button variant="primary" type="button" className="float-end" disabled={!isCurrentStep} onClick={() => console.log("Submit data", formData)}>
+                  <Button variant="primary" type="button" className="float-end" disabled={!isCurrentStep} onClick={handleNextStep}>
                     Submit
                   </Button>)}
                 </div>

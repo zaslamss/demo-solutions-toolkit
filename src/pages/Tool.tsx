@@ -241,9 +241,9 @@ const steps: Record<string, Step[]> = {
           "sheet_id": "getSheetId.sheetId",
           "rows": "confirmData.rows",
         },
-        "storeResponseAs": "rowsCreated"
       }
     },
+
   ]
 }
 
