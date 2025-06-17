@@ -7,7 +7,7 @@ import { Accordion, Button, Container, Spinner } from "react-bootstrap";
 import { DynamicFormModal } from "../components/DynamicFormModal";
 import { Description } from "../components/Description";
 import Runs from "../components/Runs";
-import { InteractiveSteps } from "../components/InteractiveSteps";
+import { Steps }  from "../components/Steps";
 
 // Types
 import { ToolProps, Run, Step } from "../types";
@@ -329,7 +329,7 @@ export const Tool = () => {
           )}
           <h4 className="mb-3 fw-bold text-primary">{tool.name}</h4>
           <p>{tool.summary}</p>
-          <InteractiveSteps steps={steps[tool.name]} />
+          <Steps steps={steps[tool.name]} />
         </>
 
       ) : <Spinner animation="border" variant="primary" />}
