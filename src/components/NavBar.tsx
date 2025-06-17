@@ -26,7 +26,7 @@ export const NavBar = () => {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
               <NavDropdown title={`Hi, ${user.firstName} 👋`} id="basic-nav-dropdown">
-                <NavDropdown.Item href="#settings">Settings</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => window.location.href = '/settings'}>Settings</NavDropdown.Item>
                 <NavDropdown.Item onClick={handleLogout}>Log Out</NavDropdown.Item>
               </NavDropdown>
             </Nav>

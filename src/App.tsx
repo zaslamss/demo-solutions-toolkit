@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Dashboard } from './pages/Dashboard'
 import { Login } from './pages/Login';
 import { Tool } from './pages/Tool';
+import { Settings } from './pages/Settings';
 
 // Components
 import { ProtectedRoute } from './auth/ProtectedRoute';
@@ -35,6 +36,14 @@ function App() {
             <ProtectedRoute>
               <NavBar />
               <Tool />
+            </ProtectedRoute>
+          } />
+          <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <NavBar />
+              <Settings />
             </ProtectedRoute>
           } />
         <Route path="*" element={<Navigate to="/" replace />} />
