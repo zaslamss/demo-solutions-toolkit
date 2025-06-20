@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Step as StepType } from "../types";
+import { Step as StepType, StepMessage } from "../types";
 import { Step } from "./Step";
 import { Modal, Button } from "react-bootstrap";
 
@@ -12,6 +12,7 @@ export const Steps = ({ steps }: StepsProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [responseData, setResponseData] = useState<Record<string, any>>({});
+  const [messageData, setMessageData] = useState<Record<string, StepMessage>>({});
   const [loadingStepIds, setLoadingStepIds] = useState<Set<string>>(new Set());
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const modalText = "The tool ran successfully. Thank you!";
@@ -28,12 +29,29 @@ export const Steps = ({ steps }: StepsProps) => {
     });
   };
 
+  const setMessageForStep = (stepId: string, level: StepMessage['level'], message: string) => {
+    setMessageData(prev => ({
+      ...prev,
+      [stepId]: { level, message }
+    }));
+  };
+
+  const clearMessageForStep = (stepId: string) => {
+    setMessageData(prev => {
+      const newMessages = { ...prev };
+      delete newMessages[stepId];
+      return newMessages;
+    });
+  };
+
   const handleNextStep = async (stepId: string) => {
     const step = steps[currentStepIndex];
 
     if (step.id !== stepId) {
       return;
     }
+
+    clearMessageForStep(stepId);
 
     const willCallApi = step.onSubmit?.action === "callApi" || step.onSubmit?.action === "getSheetInfo";
 
@@ -53,6 +71,7 @@ export const Steps = ({ steps }: StepsProps) => {
 
         if (!apiEndpoint) {
           console.error("API endpoint is not defined");
+          setMessageForStep(stepId, "ERROR", "API endpoint is not defined.");
           return;
         }
 
@@ -75,13 +94,16 @@ export const Steps = ({ steps }: StepsProps) => {
 
         const res = await fetch(apiEndpoint, fetchOptions);
 
-        if (!res.ok) throw new Error(`API call failed with status ${res.status}`);
+        if (!res.ok) {
+          setMessageForStep(stepId, "ERROR", await res.json());
+          throw new Error("API call failed");
+        }
         const result = await res.json();
 
         if (storeResponseAs) {
           setResponseData(prev => ({
             ...prev,
-            [storeResponseAs]: result
+            [storeResponseAs]: result.data ? result.data : result
           }));
           const nextStep = steps[currentStepIndex + 1];
           if (nextStep?.type === "grid" && nextStep.dataSource === storeResponseAs) {
@@ -96,6 +118,9 @@ export const Steps = ({ steps }: StepsProps) => {
               [nextStep.id]: { rows: result.rows }
             }));
           }
+          if (result.message) {
+            setMessageForStep(stepId, "INFO", result.message);
+          }
         }
       }
 
@@ -103,20 +128,26 @@ export const Steps = ({ steps }: StepsProps) => {
         const { storeResponseAs } = step.onSubmit;
         const sheetId = formData[step.id]?.sheetId;
         if (!sheetId) {
-          console.error("Sheet ID is not defined");
-          return;
+          setMessageForStep(stepId, "ERROR", "Sheet ID is not defined.");
+          throw new Error("Sheet ID is not defined");
         }
         const res = await fetch(`https://devapi.mbfcorp.tools/sheet/${sheetId}`, {
           method: 'GET',
           credentials: 'include',
         });
-        if (!res.ok) throw new Error(`API call failed with status ${res.status}`);
+        if (!res.ok) {
+          setMessageForStep(stepId, "ERROR", await res.json());
+          throw new Error("API call failed");
+        }
         const result = await res.json();
         if (storeResponseAs) {
           setResponseData(prev => ({
             ...prev,
             [storeResponseAs]: result
           }));
+        }
+        if (result.message) {
+          setMessageForStep(stepId, "INFO", result.message);
         }
       }
 
@@ -144,6 +175,7 @@ export const Steps = ({ steps }: StepsProps) => {
         [fieldId]: value
       }
     }));
+    clearMessageForStep(stepId);
   };
 
   const handleCloseCompletionModal = () => {
@@ -151,6 +183,7 @@ export const Steps = ({ steps }: StepsProps) => {
     setCurrentStepIndex(0);
     setFormData({});
     setResponseData({});
+    setMessageData({});
   };
 
   return (
@@ -160,6 +193,8 @@ export const Steps = ({ steps }: StepsProps) => {
           const isCurrentStep = index === currentStepIndex;
           const isLoadingThisStep = loadingStepIds.has(step.id);
           const isLastStep = index === steps.length - 1; 
+          const stepMessage = messageData[step.id];
+
 
           return (
             <Step
@@ -173,11 +208,11 @@ export const Steps = ({ steps }: StepsProps) => {
               onNextStep={handleNextStep}
               isLoadingThisStep={isLoadingThisStep}
               responseData={responseData}
+              message={stepMessage}
             />
           );
         })}
       </div>
-      {/* Completion Modal */}
       <Modal show={showCompletionModal} onHide={handleCloseCompletionModal}>
         <Modal.Header closeButton>
           <Modal.Title>Completed</Modal.Title>

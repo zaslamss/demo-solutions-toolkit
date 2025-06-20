@@ -1,7 +1,9 @@
 import React from 'react';
-import { Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
-import { Step as StepType } from '../types';
+import { Alert, Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
+import { Step as StepType, StepMessage } from '../types';
 import { Grid } from './Grid';
+
+
 
 interface StepProps {
   step: StepType;
@@ -13,7 +15,14 @@ interface StepProps {
   isLoadingThisStep: boolean;
   isLastStep: boolean;
   responseData: Record<string, any>;
+  message?: StepMessage;
 }
+
+interface UploadedFileData {
+  data: string;
+  mime_type: string;
+}
+
 
 export const Step: React.FC<StepProps> = ({
   step,
@@ -25,7 +34,75 @@ export const Step: React.FC<StepProps> = ({
   isLoadingThisStep,
   responseData,
   isLastStep,
+  message
 }) => {
+
+  const getVariantFromLevel = (level: "INFO" | "WARNING" | "ERROR") => {
+    switch (level) {
+      case "INFO":
+        return "success";
+      case "WARNING":
+        return "warning";
+      case "ERROR":
+        return "danger";
+      default:
+        return "secondary";
+    }
+  };
+
+  const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>, stepId: string, fieldId: string) => {
+    const file = e.target.files?.[0]; 
+
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        console.error('Please upload an image file.');
+        e.target.value = '';
+        onInputChange(stepId, fieldId, null);
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        const base64String = reader.result?.toString().split(',')[1];
+        const mimeType = file.type;
+
+        if (base64String && mimeType) {
+          onInputChange(stepId, fieldId, { data: base64String, mime_type: mimeType });
+        } else {
+          console.error("Failed to read file as Base64.");
+          onInputChange(stepId, fieldId, null);
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        onInputChange(stepId, fieldId, null);
+      };
+
+      reader.readAsDataURL(file);
+    } else {
+      onInputChange(stepId, fieldId, null);
+    }
+  };
+
+  const getFilePreview = (fieldId: string) => {
+    const fileData: UploadedFileData | null = formData[step.id]?.[fieldId];
+    if (fileData && fileData.data && fileData.mime_type) {
+      return (
+        <div className="mt-2">
+          <h6>Image Preview:</h6>
+          <img
+            src={`data:${fileData.mime_type};base64,${fileData.data}`}
+            alt="Preview"
+            style={{ maxWidth: '100px', maxHeight: '100px', border: '1px solid #ddd' }}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <Card style={{ width: '100%' }} className="h-100 mb-3">
       <Card.Body>
@@ -38,6 +115,7 @@ export const Step: React.FC<StepProps> = ({
                 <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
                 <Form.Control
                   value={formData[step.id]?.[field.id] || ''}
+                  required={field.required}
                   onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
                   disabled={!isCurrentStep || isLoadingThisStep}
                 />
@@ -55,14 +133,18 @@ export const Step: React.FC<StepProps> = ({
               </InputGroup>
             )}
             {field.type === "upload" && (
-              <InputGroup>
-                <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
-                <Form.Control
-                  type="file"
-                  onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
-                  disabled={!isCurrentStep || isLoadingThisStep}
-                />
-              </InputGroup>
+              <>
+                <InputGroup>
+                  <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
+                  <Form.Control
+                    type="file"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileUploadChange(e, step.id, field.id)}
+                    disabled={!isCurrentStep || isLoadingThisStep}
+                    accept="image/*" 
+                  />
+                </InputGroup>
+                {getFilePreview(field.id)}
+              </>
             )}
           </div>
         ))}
@@ -94,6 +176,11 @@ export const Step: React.FC<StepProps> = ({
             )}
           </Button>
         </div>
+        {message ? (
+          <Alert key={getVariantFromLevel(message.level)} variant={getVariantFromLevel(message.level)} className="mt-4 p-2">
+            {message.message}
+          </Alert>
+        ) : null}
       </Card.Body>
     </Card>
   );

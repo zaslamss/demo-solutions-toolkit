@@ -100,3 +100,9 @@ export interface Step {
       storeResponseAs?: string;
     };
   }
+
+  
+export interface StepMessage {
+  level: "INFO" | "WARNING" | "ERROR";
+  message: string;
+}

@@ -1,15 +1,10 @@
-// React + Third Party Libraries
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Accordion, Button, Container, Spinner } from "react-bootstrap";
-
-// Components
 import { DynamicFormModal } from "../components/DynamicFormModal";
 import { Description } from "../components/Description";
 import Runs from "../components/Runs";
-import { Steps }  from "../components/Steps";
-
-// Types
+import { Steps } from "../components/Steps";
 import { ToolProps, Run, Step } from "../types";
 
 
@@ -63,7 +58,7 @@ const steps: Record<string, Step[]> = {
     {
       "id": "getSheetId",
       "title": "Sheet Information",
-      "description": "Please enter the ID of the sheet you'd like to update and select whether you'd like to add new rows or delete & replace rows with new data.",
+      "description": "Please enter the ID of the sheet you'd like to update.",
       "type": "form",
       "nextStepId": "getImage",
       "fields": [
@@ -73,14 +68,17 @@ const steps: Record<string, Step[]> = {
           "label": "Sheet ID",
           "required": true
         },
-
-      ]
+      ],
+      "onSubmit": {
+        "action": "getSheetInfo",
+        "storeResponseAs": "sheetInfo"
+      }
     },
     {
       "id": "getImage",
-      "title": "Upload Screenshot",
-      "description": "Please upload the screenshot you'd like to reference to create your sheet.",
-      "type": "form",
+      "title": "Upload Image",
+      "description": "Please upload the image you'd like to reference to create your sheet.",
+      "type": "prompt",
       "nextStepId": "confirmGrid",
       "fields": [
         {
@@ -92,11 +90,11 @@ const steps: Record<string, Step[]> = {
       ],
       "onSubmit": {
         "action": "callApi",
-        "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/gemini-columns",
-        "promptContext": "Please provide a list of steps that would be useful for a {prompt} use case.",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+        "promptContext": "Provided this image, extract the column headers, and for each header, infer the most likely data type based on the visibile content in that column. Rules: 1. Ignore any application UI elements such as ribbon bars, toolbars, or menus (e.g. 'File', 'Edit', etc). 2. Focus on ONLY the actual column headers directly above the grid of structed data. 3. Preserve the exact text of the headers as seen in the image. 4. If no table is visible return an error.",
         "method": "POST",
         "inputMapping": {
-          "prompt": "prompt",
+          "image": "getImage.image",
         },
         "storeResponseAs": "columns"
       }
@@ -110,11 +108,28 @@ const steps: Record<string, Step[]> = {
       "nextStepId": "confirmGrid",
       "onSubmit": {
         "action": "callApi",
-        "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/gemini-grid-data",
-        "promptContext": "Please provide a list of steps that would be useful for a {prompt} use case.",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
         "method": "POST",
         "inputMapping": {
-          "prompt": "prompt",
+          "sheet_id": "getSheetId.sheetId",
+          "columns": "confirmColumns.rows"
+        },
+        "storeResponseAs": "columnsCreated"
+      }
+    },
+    {
+      "id": "getGridData",
+      "title": "Get Grid Data",
+      "description": "Retrieve the grid data from the image provided previously.",
+      "type": "prompt",
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+        "promptContext": "Retrieve the grid data from the image provided. Ignore the column header row. If the data type is a DATE, always return DATE in the format YYYY-MM-DD (ISO 8601). If the data type is a DATETIME, always return DATETIMEs in the format YYYY-MM-DDTHH:MM:SSZ (ISO 8601, UTC). If it's a CONTACT_LIST, return a valid email address. If you're not able to determine what the email address is return a placeholder in the format visible_name@example.com.",
+        "method": "POST",
+        "inputMapping": {
+          "columns": "confirmColumns.rows",
+          "image": "getImage.image"
         },
         "storeResponseAs": "gridData"
       }
@@ -127,11 +142,11 @@ const steps: Record<string, Step[]> = {
       "description": "Review the generated rows below. Click 'Submit' to proceed.",
       "onSubmit": {
         "action": "callApi",
-        "apiEndpoint": "https://1ore5rpw95.execute-api.us-west-1.amazonaws.com/api/actions/create-sheet",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/tools/gridsnap",
         "method": "POST",
         "inputMapping": {
-          "sheetId": "getSheetId.sheetId",
-          "rows": "confirmGrid"
+          "sheet_id": "getSheetId.sheetId",
+          "rows": "confirmGrid.rows"
         }
       }
     }
@@ -140,9 +155,9 @@ const steps: Record<string, Step[]> = {
     {
       "id": "getSheetId",
       "title": "Sheet Information",
-      "description": "Please enter the ID of the sheet you'd like to update and select whether you'd like to add new rows or delete & replace rows with new data.",
+      "description": "Please enter the ID of the sheet you'd like to update.",
       "type": "form",
-      "nextStepId": "getImage",
+      "nextStepId": "getUseCase",
       "fields": [
         {
           "id": "sheetId",
