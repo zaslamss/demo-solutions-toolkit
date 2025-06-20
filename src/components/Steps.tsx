@@ -95,8 +95,9 @@ export const Steps = ({ steps }: StepsProps) => {
         const res = await fetch(apiEndpoint, fetchOptions);
 
         if (!res.ok) {
-          setMessageForStep(stepId, "ERROR", await res.json());
-          throw new Error("API call failed");
+          const error = await res.json()
+          setMessageForStep(stepId, "ERROR", error.message);
+          return;
         }
         const result = await res.json();
 
