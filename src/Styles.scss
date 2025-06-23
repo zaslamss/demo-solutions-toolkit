@@ -1,7 +1,7 @@
 // Override Bootstrap variables BEFORE importing Bootstrap
 $theme-colors: (
     "primary": #7848dc,
-    "secondary": #6c757d,
+    "secondary": #ffffff,
     "success": #00b074,
     "danger": #e63757,
     "warning": #f6c343,
@@ -19,6 +19,13 @@ $font-family-base: 'Inter', sans-serif; // or any font you prefer
     color: black !important;
     &:hover {
         background: linear-gradient(90deg, #C4B4FF 0%, #DCE4FF 100%);
+    }
+}
+
+.btn-secondary {
+    border: 1px solid #EAE3FF !important;
+    &:hover {
+        background: linear-gradient(90deg, #EAE3FF 0%, #F2F6FF 100%);
     }
 }
 

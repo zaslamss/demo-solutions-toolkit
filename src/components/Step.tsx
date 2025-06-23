@@ -4,14 +4,15 @@ import { Step as StepType, StepMessage } from '../types';
 import { Grid } from './Grid';
 
 
-
 interface StepProps {
   step: StepType;
   isCurrentStep: boolean;
+  currentStepIndex: number;
   formData: Record<string, any>;
   setFormData: React.Dispatch<React.SetStateAction<Record<string, any>>>;
   onInputChange: (stepId: string, fieldId: string, value: any) => void;
   onNextStep: (stepId: string) => void;
+  onPreviousStep: () => void;
   isLoadingThisStep: boolean;
   isLastStep: boolean;
   responseData: Record<string, any>;
@@ -23,14 +24,15 @@ interface UploadedFileData {
   mime_type: string;
 }
 
-
 export const Step: React.FC<StepProps> = ({
   step,
   isCurrentStep,
+  currentStepIndex,
   formData,
   setFormData,
   onInputChange,
   onNextStep,
+  onPreviousStep,
   isLoadingThisStep,
   responseData,
   isLastStep,
@@ -51,7 +53,7 @@ export const Step: React.FC<StepProps> = ({
   };
 
   const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>, stepId: string, fieldId: string) => {
-    const file = e.target.files?.[0]; 
+    const file = e.target.files?.[0];
 
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -140,7 +142,7 @@ export const Step: React.FC<StepProps> = ({
                     type="file"
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileUploadChange(e, step.id, field.id)}
                     disabled={!isCurrentStep || isLoadingThisStep}
-                    accept="image/*" 
+                    accept="image/*"
                   />
                 </InputGroup>
                 {getFilePreview(field.id)}
@@ -158,11 +160,16 @@ export const Step: React.FC<StepProps> = ({
             disabled={!isCurrentStep || isLoadingThisStep}
           />
         )}
-        <div className="d-grid gap-2">
+        <div className="d-flex justify-content-between gap-2 mt-3">
+          {isCurrentStep && currentStepIndex > 0 && (
+            <Button variant="secondary" className="flex-fill" onClick={onPreviousStep}>
+              Back
+            </Button>
+          )}
           <Button
             variant="primary"
             type="button"
-            className="float-end"
+            className="flex-fill"
             onClick={() => onNextStep(step.id)}
             disabled={!isCurrentStep || isLoadingThisStep}
           >

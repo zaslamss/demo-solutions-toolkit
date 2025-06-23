@@ -168,6 +168,18 @@ export const Steps = ({ steps }: StepsProps) => {
     }
   };
 
+  const handlePreviousStep = () => {
+    if (currentStepIndex > 0) {
+      const currentStepId = steps[currentStepIndex].id;
+      clearMessageForStep(currentStepId);
+      
+      const previousStepIndex = currentStepIndex - 1;
+      const previousStepId = steps[previousStepIndex].id;
+      clearMessageForStep(previousStepId)
+      setCurrentStepIndex(previousStepIndex);
+    }
+  };
+
   const handleInputChange = (stepId: string, fieldId: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -202,11 +214,13 @@ export const Steps = ({ steps }: StepsProps) => {
               key={step.id}
               step={step}
               isCurrentStep={isCurrentStep}
+              currentStepIndex={currentStepIndex}
               isLastStep={isLastStep}
               formData={formData}
               setFormData={setFormData}
               onInputChange={handleInputChange}
               onNextStep={handleNextStep}
+              onPreviousStep={handlePreviousStep} 
               isLoadingThisStep={isLoadingThisStep}
               responseData={responseData}
               message={stepMessage}
