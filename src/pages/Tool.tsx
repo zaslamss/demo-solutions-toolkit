@@ -1,57 +1,57 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Accordion, Button, Container, Spinner } from "react-bootstrap";
-import { DynamicFormModal } from "../components/DynamicFormModal";
-import { Description } from "../components/Description";
-import Runs from "../components/Runs";
+// import { DynamicFormModal } from "../components/DynamicFormModal";
+// import { Description } from "../components/Description";
+// import Runs from "../components/Runs";
 import { Steps } from "../components/Steps";
 import { ToolProps, Run, Step } from "../types";
 
 
-const runs: Run[] = [
-  {
-    "id": "1",
-    "name": "Demo Customizer Run 1",
-    "progressTotal": 600,
-    "progressCompleted": 10,
-    "status": "IN PROGRESS",
-    "log": [
-      {
-        "level": "INFO",
-        "message": "We are starting the run"
-      },
-      {
-        "level": "INFO",
-        "message": "We are doing something"
-      },
-      {
-        "level": "ERROR",
-        "message": "Something went wrong"
-      }
-    ]
-  },
-  {
-    "id": "2",
-    "name": "Demo Customizer Run 2",
-    "progressTotal": 600,
-    "progressCompleted": 600,
-    "status": "SUCCESS",
-    "log": [
-      {
-        "level": "INFO",
-        "message": "We are starting the run"
-      },
-      {
-        "level": "INFO",
-        "message": "We are doing something"
-      },
-      {
-        "level": "ERROR",
-        "message": "Something went wrong"
-      }
-    ]
-  }
-]
+// const runs: Run[] = [
+//   {
+//     "id": "1",
+//     "name": "Demo Customizer Run 1",
+//     "progressTotal": 600,
+//     "progressCompleted": 10,
+//     "status": "IN PROGRESS",
+//     "log": [
+//       {
+//         "level": "INFO",
+//         "message": "We are starting the run"
+//       },
+//       {
+//         "level": "INFO",
+//         "message": "We are doing something"
+//       },
+//       {
+//         "level": "ERROR",
+//         "message": "Something went wrong"
+//       }
+//     ]
+//   },
+//   {
+//     "id": "2",
+//     "name": "Demo Customizer Run 2",
+//     "progressTotal": 600,
+//     "progressCompleted": 600,
+//     "status": "SUCCESS",
+//     "log": [
+//       {
+//         "level": "INFO",
+//         "message": "We are starting the run"
+//       },
+//       {
+//         "level": "INFO",
+//         "message": "We are doing something"
+//       },
+//       {
+//         "level": "ERROR",
+//         "message": "Something went wrong"
+//       }
+//     ]
+//   }
+// ]
 
 const steps: Record<string, Step[]> = {
   "GridSnap": [
@@ -232,7 +232,7 @@ const steps: Record<string, Step[]> = {
       "onSubmit": {
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
-        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. Dates should be formatted as YYYY-MM-DD (ISO 8601). CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601). CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
         "method": "POST",
         "inputMapping": {
           "columns": "confirmColumns.rows",
@@ -259,6 +259,119 @@ const steps: Record<string, Step[]> = {
       }
     },
 
+  ],
+  "Demo Customizer": [
+    {
+      "id": "getRunInfo",
+      "title": "Run Information",
+      "description": "Fill out the following fields.",
+      "type": "form",
+      "nextStepId": "getTags",
+      "fields": [
+        {
+          "id": "folderIds",
+          "type": "input",
+          "label": "Folder IDs",
+          "required": true
+        },
+        {
+          "id": "workspaceIds",
+          "type": "input",
+          "label": "Workspace IDs",
+          "required": true
+        },
+        {
+          "id": "runName",
+          "type": "input",
+          "label": "Run Name",
+          "required": true
+        },
+        {
+          "id": "opportunityId",
+          "type": "input",
+          "label": "Opportunity ID",
+          "required": true
+        },
+        {
+          "id": "templateCategory",
+          "type": "select",
+          "label": "Template Category",
+          "options": [
+            { "value": "PPM", "label": "PPM" },
+            { "value": "ITPM", "label": "ITPM" },
+            { "value": "Services Delivery", "label": "Services Delivery" },
+            { "value": "Certification", "label": "Certification" }
+          ],
+          "required": true
+        },
+        {
+          "id": "templateType",
+          "type": "select",
+          "label": "Template Type",
+          "required": true,
+          "dependsOn": {
+          "fieldId": "templateCategory",
+          "optionsMap": {
+            "PPM": [
+              { "value": "Tags", "label": "Tags" },
+              { "value": "Tags Only", "label": "Tags Only" },
+              { "value": "Enterprise PMO", "label": "Enterprise PMO" }
+            ],
+            "ITPM": [
+              { "value": "Hardware", "label": "Hardware" },
+              { "value": "Software", "label": "Software" }
+            ],
+            "Services Delivery": [
+                { "value": "Option SD1", "label": "Option SD1" },
+                { "value": "Option SD2", "label": "Option SD2" }
+            ],
+            "Certification": [
+                { "value": "Option Cert1", "label": "Option Cert1" },
+                { "value": "Option Cert2", "label": "Option Cert2" }
+            ]
+          }
+        }
+        }
+      ],
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/get-tags",
+        "storeResponseAs": "sheetInfo"
+      },
+    },
+    {
+      "id": "",
+      "title": "Get Template",
+      "description": "Select the template you'd like to use for this run.",
+      "type": "prompt",
+      "nextStepId": "confirmTemplate",
+      "fields": [
+        {
+          "id": "templateName",
+          "type": "input",
+          "label": "Template Name",
+          "required": true
+        }
+      ],
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/get-template",
+        "method": "POST",
+        "inputMapping": {
+          "template_name": "getTemplate.templateName"
+        },
+        "storeResponseAs": "template"
+      }
+    },
+    {
+      "id": "confirmTemplate",
+      "title": "Confirm Template",
+      "description": "Review the template below. Click 'Next' to proceed.",
+      "type": "grid",
+      "dataSource": "template",
+      "nextStepId": null,
+      // Add onSubmit if needed
+    }
   ]
 }
 
@@ -318,7 +431,7 @@ export const Tool = () => {
     <Container>
       {tool ? (
         <>
-          {tool.name === "Demo Customizer" && (
+          {/* {tool.name === "Demo Customizer" && (
             <>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h4 className="mb-0 fw-bold">{tool.name}</h4>
@@ -341,7 +454,7 @@ export const Tool = () => {
                 </Accordion.Item>
               </Accordion>
             </>
-          )}
+          )} */}
           <h4 className="mb-3 fw-bold text-primary">{tool.name}</h4>
           <p>{tool.summary}</p>
           <Steps steps={steps[tool.name]} />

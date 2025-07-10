@@ -88,6 +88,10 @@ export interface Step {
       type: string;
       label: string;
       required?: boolean;
+      dependsOn?: {
+        fieldId: string;
+        optionsMap: Record<string, { value: string; label: string }[]>;
+      };
       options?: { value: string; label: string }[];
     }[];
     dataSource?: string;

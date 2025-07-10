@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Alert, Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
 import { Step as StepType, StepMessage } from '../types';
 import { Grid } from './Grid';
@@ -38,6 +38,29 @@ export const Step: React.FC<StepProps> = ({
   isLastStep,
   message
 }) => {
+
+  // This useEffect will reset dependent field values when the dependency changes
+  useEffect(() => {
+    if (!isCurrentStep || !step.fields) return;
+
+    step.fields.forEach(field => {
+      if (field.type === "select" && field.dependsOn) {
+        const dependentFieldId = field.dependsOn.fieldId;
+        const dependentFieldValue = formData[step.id]?.[dependentFieldId];
+        const currentDependentOptions = field.dependsOn.optionsMap[dependentFieldValue] || [];
+
+        // Check if the current value of the dependent field is still valid within the new options
+        const currentFieldValue = formData[step.id]?.[field.id];
+        const isCurrentValueValid = currentDependentOptions.some(option => option.value === currentFieldValue);
+
+        // If the dependent field's value has changed or the current value is no longer valid, reset the field
+        if (dependentFieldValue !== undefined && !isCurrentValueValid && currentFieldValue !== undefined) {
+            onInputChange(step.id, field.id, ''); // Reset to default/empty
+        }
+      }
+    });
+  }, [formData, step.id, step.fields, onInputChange, isCurrentStep]);
+
 
   const getVariantFromLevel = (level: "INFO" | "WARNING" | "ERROR") => {
     switch (level) {
@@ -110,46 +133,83 @@ export const Step: React.FC<StepProps> = ({
       <Card.Body>
         <Card.Title><b>{step.title}</b></Card.Title>
         <p>{step.description}</p>
-        {step?.fields?.map((field) => (
-          <div key={field.id} className="mb-3">
-            {field.type === "input" && (
-              <InputGroup>
-                <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
-                <Form.Control
-                  value={formData[step.id]?.[field.id] || ''}
-                  required={field.required}
-                  onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
-                  disabled={!isCurrentStep || isLoadingThisStep}
-                />
-              </InputGroup>
-            )}
-            {field.type === "textarea" && (
-              <InputGroup>
-                <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
-                <Form.Control
-                  as="textarea"
-                  value={formData[step.id]?.[field.id] || ''}
-                  onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
-                  disabled={!isCurrentStep || isLoadingThisStep}
-                />
-              </InputGroup>
-            )}
-            {field.type === "upload" && (
-              <>
+        {step?.fields?.map((field) => {
+          // Determine options for select fields
+          let optionsToRender = field.options || [];
+          let isDisabled = !isCurrentStep || isLoadingThisStep;
+
+          if (field.type === "select" && field.dependsOn) {
+            const dependentFieldId = field.dependsOn.fieldId;
+            const dependentFieldValue = formData[step.id]?.[dependentFieldId];
+
+            if (dependentFieldValue && field.dependsOn.optionsMap[dependentFieldValue]) {
+              optionsToRender = field.dependsOn.optionsMap[dependentFieldValue];
+              isDisabled = false; // Enable if a valid dependent value is selected
+            } else {
+              optionsToRender = []; // No options if dependent value not selected or not in map
+              isDisabled = true; // Disable if dependent not selected or no valid mapping
+            }
+          }
+
+          return (
+            <div key={field.id} className="mb-3">
+              {field.type === "input" && (
                 <InputGroup>
                   <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
                   <Form.Control
-                    type="file"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileUploadChange(e, step.id, field.id)}
+                    value={formData[step.id]?.[field.id] || ''}
+                    required={field.required}
+                    onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
                     disabled={!isCurrentStep || isLoadingThisStep}
-                    accept="image/*"
                   />
                 </InputGroup>
-                {getFilePreview(field.id)}
-              </>
-            )}
-          </div>
-        ))}
+              )}
+              {field.type === "select" && (
+                <InputGroup>
+                  <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
+                  <Form.Select
+                    value={formData[step.id]?.[field.id] || ''}
+                    onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
+                    disabled={isDisabled} // Use the calculated isDisabled
+                    required={field.required} // Add required prop here
+                  >
+                    <option value="">None</option>
+                    {optionsToRender.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </InputGroup>
+              )}
+              {field.type === "textarea" && (
+                <InputGroup>
+                  <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
+                  <Form.Control
+                    as="textarea"
+                    value={formData[step.id]?.[field.id] || ''}
+                    onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
+                    disabled={!isCurrentStep || isLoadingThisStep}
+                  />
+                </InputGroup>
+              )}
+              {field.type === "upload" && (
+                <>
+                  <InputGroup>
+                    <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
+                    <Form.Control
+                      type="file"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileUploadChange(e, step.id, field.id)}
+                      disabled={!isCurrentStep || isLoadingThisStep}
+                      accept="image/*"
+                    />
+                  </InputGroup>
+                  {getFilePreview(field.id)}
+                </>
+              )}
+            </div>
+          );
+        })}
         {step.type === "grid" && step.dataSource && responseData[step.dataSource] && (
           <Grid
             gridData={responseData[step.dataSource]}
