@@ -1,11 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Accordion, Button, Container, Spinner } from "react-bootstrap";
+import { Container, Spinner } from "react-bootstrap";
 // import { DynamicFormModal } from "../components/DynamicFormModal";
 // import { Description } from "../components/Description";
 // import Runs from "../components/Runs";
 import { Steps } from "../components/Steps";
-import { ToolProps, Run, Step } from "../types";
+import { ToolProps, Step } from "../types";
 
 
 // const runs: Run[] = [
@@ -69,10 +69,12 @@ const steps: Record<string, Step[]> = {
           "required": true
         },
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "getSheetInfo",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/sheet",
+        "method": "GET",
         "storeResponseAs": "sheetInfo"
-      }
+      }]
     },
     {
       "id": "getImage",
@@ -88,7 +90,7 @@ const steps: Record<string, Step[]> = {
           "required": true
         }
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
         "promptContext": "Provided this image, extract the column headers, and for each header, infer the most likely data type based on the visibile content in that column. Rules: 1. Ignore any application UI elements such as ribbon bars, toolbars, or menus (e.g. 'File', 'Edit', etc). 2. Focus on ONLY the actual column headers directly above the grid of structed data. 3. Preserve the exact text of the headers as seen in the image. 4. If no table is visible return an error.",
@@ -97,7 +99,7 @@ const steps: Record<string, Step[]> = {
           "image": "getImage.image",
         },
         "storeResponseAs": "columns"
-      }
+      }]
     },
     {
       "id": "confirmColumns",
@@ -106,7 +108,7 @@ const steps: Record<string, Step[]> = {
       "type": "grid",
       "dataSource": "columns",
       "nextStepId": "confirmGrid",
-      "onSubmit": {
+      "onSubmit":[{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
         "method": "POST",
@@ -115,15 +117,10 @@ const steps: Record<string, Step[]> = {
           "columns": "confirmColumns.rows"
         },
         "storeResponseAs": "columnsCreated"
-      }
-    },
-    {
-      "id": "getGridData",
-      "title": "Get Grid Data",
-      "description": "Retrieve the grid data from the image provided previously.",
-      "type": "prompt",
-      "onSubmit": {
+      },
+      {
         "action": "callApi",
+        "prompt": true,
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
         "promptContext": "Retrieve the grid data from the image provided. Ignore the column header row. If the data type is a DATE, always return DATE in the format YYYY-MM-DD (ISO 8601). If the data type is a DATETIME, always return DATETIMEs in the format YYYY-MM-DDTHH:MM:SSZ (ISO 8601, UTC). If it's a CONTACT_LIST, return a valid email address. If you're not able to determine what the email address is return a placeholder in the format visible_name@example.com.",
         "method": "POST",
@@ -133,6 +130,7 @@ const steps: Record<string, Step[]> = {
         },
         "storeResponseAs": "gridData"
       }
+      ]
     },
     {
       "id": "confirmGrid",
@@ -140,7 +138,7 @@ const steps: Record<string, Step[]> = {
       "type": "grid",
       "dataSource": "gridData",
       "description": "Review the generated rows below. Click 'Submit' to proceed.",
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/tools/gridsnap",
         "method": "POST",
@@ -148,7 +146,7 @@ const steps: Record<string, Step[]> = {
           "sheet_id": "getSheetId.sheetId",
           "rows": "confirmGrid.rows"
         }
-      }
+      }]
     }
   ],
   "SheetGenie": [
@@ -166,10 +164,12 @@ const steps: Record<string, Step[]> = {
           "required": true
         },
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "getSheetInfo",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/sheet",
+        "method": "GET",
         "storeResponseAs": "sheetInfo"
-      }
+      }]
     },
     {
       "id": "getUseCase",
@@ -185,7 +185,7 @@ const steps: Record<string, Step[]> = {
           "required": true
         }
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
         "promptContext": "I am creating a Smartsheet sheet for a {prompt} use case. Please provide a list of column headers that would be useful information for me to track on this sheet.",
@@ -194,7 +194,7 @@ const steps: Record<string, Step[]> = {
           "prompt": "prompt",
         },
         "storeResponseAs": "columns"
-      }
+      }]
     },
     {
       "id": "confirmColumns",
@@ -204,7 +204,7 @@ const steps: Record<string, Step[]> = {
       "editable": true,
       "dataSource": "columns",
       "nextStepId": "getDataPrompt",
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
         "method": "POST",
@@ -213,7 +213,7 @@ const steps: Record<string, Step[]> = {
           "columns": "confirmColumns.rows",
         },
         "storeResponseAs": "columnsCreated"
-      }
+      }]
     },
     {
       "id": "getDataPrompt",
@@ -229,17 +229,17 @@ const steps: Record<string, Step[]> = {
           "required": true
         }
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
-        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601). CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). ABSTRACT_DATETIME and DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
         "method": "POST",
         "inputMapping": {
           "columns": "confirmColumns.rows",
           "prompt": "prompt",
         },
         "storeResponseAs": "mockData"
-      }
+      }]
     },
     {
       "id": "confirmData",
@@ -248,7 +248,7 @@ const steps: Record<string, Step[]> = {
       "editable": false,
       "dataSource": "mockData",
       "description": "Review the generated rows below. Click 'Submit' to proceed.",
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/tools/sheetgenie",
         "method": "POST",
@@ -256,7 +256,7 @@ const steps: Record<string, Step[]> = {
           "sheet_id": "getSheetId.sheetId",
           "rows": "confirmData.rows",
         },
-      }
+      }]
     },
 
   ],
@@ -310,34 +310,34 @@ const steps: Record<string, Step[]> = {
           "label": "Template Type",
           "required": true,
           "dependsOn": {
-          "fieldId": "templateCategory",
-          "optionsMap": {
-            "PPM": [
-              { "value": "Tags", "label": "Tags" },
-              { "value": "Tags Only", "label": "Tags Only" },
-              { "value": "Enterprise PMO", "label": "Enterprise PMO" }
-            ],
-            "ITPM": [
-              { "value": "Hardware", "label": "Hardware" },
-              { "value": "Software", "label": "Software" }
-            ],
-            "Services Delivery": [
+            "fieldId": "templateCategory",
+            "optionsMap": {
+              "PPM": [
+                { "value": "Tags", "label": "Tags" },
+                { "value": "Tags Only", "label": "Tags Only" },
+                { "value": "Enterprise PMO", "label": "Enterprise PMO" }
+              ],
+              "ITPM": [
+                { "value": "Hardware", "label": "Hardware" },
+                { "value": "Software", "label": "Software" }
+              ],
+              "Services Delivery": [
                 { "value": "Option SD1", "label": "Option SD1" },
                 { "value": "Option SD2", "label": "Option SD2" }
-            ],
-            "Certification": [
+              ],
+              "Certification": [
                 { "value": "Option Cert1", "label": "Option Cert1" },
                 { "value": "Option Cert2", "label": "Option Cert2" }
-            ]
+              ]
+            }
           }
         }
-        }
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/get-tags",
         "storeResponseAs": "sheetInfo"
-      },
+      }],
     },
     {
       "id": "",
@@ -353,7 +353,7 @@ const steps: Record<string, Step[]> = {
           "required": true
         }
       ],
-      "onSubmit": {
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/get-template",
         "method": "POST",
@@ -361,7 +361,7 @@ const steps: Record<string, Step[]> = {
           "template_name": "getTemplate.templateName"
         },
         "storeResponseAs": "template"
-      }
+      }]
     },
     {
       "id": "confirmTemplate",
@@ -369,17 +369,150 @@ const steps: Record<string, Step[]> = {
       "description": "Review the template below. Click 'Next' to proceed.",
       "type": "grid",
       "dataSource": "template",
-      "nextStepId": null,
       // Add onSubmit if needed
     }
-  ]
+  ],
+  "QuickSheet": [
+    {
+      "id": "getSheetInfo",
+      "title": "Get Sheet Information",
+      "description": "Fill in the following fields.",
+      "type": "form",
+      "nextStepId": "getUseCase",
+      "fields": [
+        {
+          "id": "sheetId",
+          "type": "input",
+          "label": "Sheet ID",
+          "required": true
+        },
+        {
+          "id": "columnAction",
+          "type": "select",
+          "label": "How should we handle columns?",
+          "options": [
+            { "value": "create", "label": "Delete existing and create new columns" },
+            { "value": "existing", "label": "Use existing column data" },
+          ],
+          "required": true
+        }
+      ],
+      "onSubmit": [
+        {
+          "action": "getSheetInfo",
+          "storeResponseAs": "sheetInfo",
+          "apiEndpoint": "https://devapi.mbfcorp.tools/sheet",
+          "method": "GET"
+
+        }
+      ]
+    },
+    {
+      "id": "getUseCase",
+      "title": "Describe Your Use Case",
+      "description": "Describe the use case for which you'd like to generate mock data for. Be as specific as possible.",
+      "type": "prompt",
+      "nextStepId": "confirmColumns",
+      "fields": [
+        {
+          "id": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "required": true
+        }
+      ],
+      "onSubmit": [
+        {
+          "condition": {
+            "when": "getSheetInfo.columnAction",
+            "equals": "create"
+          },
+          "action": "callApi",
+          "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+          "promptContext": "I am creating a Smartsheet sheet for a {prompt} use case. Please provide a list of column headers that would be useful information for me to track on this sheet.",
+          "method": "POST",
+          "inputMapping": {
+            "prompt": "prompt",
+          },
+          "storeResponseAs": "columns"
+        },
+        {
+          "condition": {
+            "when": "getSheetInfo.columnAction",
+            "equals": "existing"
+          },
+          "action": "storeLocal",
+          "storeDataAs": "columns",
+          "dataToStore": {},
+          "inputMapping": {
+            "rows": "sheetInfo.columns",
+            "schema": "sheetInfo.column_schema"
+          }
+        }
+      ]
+    },
+    {
+      "id": "confirmColumns",
+      "title": "Confirm Columns",
+      "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
+      "type": "grid",
+      "editable": true,
+      "dataSource": "columns",
+      "nextStepId": "getDataPrompt",
+      "onSubmit": [{
+        "condition": {
+          "when": "getSheetInfo.columnAction",
+          "equals": "create"
+        },
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
+        "method": "POST",
+        "inputMapping": {
+          "sheet_id": "getSheetInfo.sheetId",
+          "columns": "confirmColumns.rows",
+        },
+        "storeResponseAs": "columnsCreated"
+      },
+      {
+
+        "action": "callApi",
+        "prompt": true,
+        "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "method": "POST",
+        "inputMapping": {
+          "columns": "confirmColumns.rows",
+          "prompt": "getUseCase.prompt",
+        },
+        "storeResponseAs": "mockData"
+      }]
+    },
+    {
+      "id": "confirmData",
+      "title": "Confirm and Create Sheet",
+      "type": "grid",
+      "editable": false,
+      "dataSource": "mockData",
+      "description": "Review the generated rows below. Click 'Submit' to proceed.",
+      "onSubmit": [{
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/tools/sheetgenie",
+        "method": "POST",
+        "inputMapping": {
+          "sheet_id": "getSheetInfo.sheetId",
+          "rows": "confirmData.rows",
+        },
+      }]
+    },
+
+  ],
 }
 
 
 
 export const Tool = () => {
   const [tool, setTool] = useState<ToolProps>();
-  const [showFormModal, setShowFormModal] = useState(false);
+  // const [showFormModal, setShowFormModal] = useState(false);
   const { slug } = useParams()
 
   useEffect(() => {
@@ -399,33 +532,33 @@ export const Tool = () => {
     }
   }, []);
 
-  const handleCloseFormModal = () => setShowFormModal(false);
-  const handleShowFormModal = () => setShowFormModal(true);
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fetchData = async () => {
-      try {
-        setShowFormModal(false);
-        const response = await fetch('https://devapi.mbfcorp.tools/api/tools/demo-customizer', {
-          method: "POST",
-          body: JSON.stringify({
-            function: `toolkit-${slug}`,
-            workspace_ids: '6420289752983428,6173999148361604',
-            key_1: 'Parent 1',
-            value_1: '..USM..',
-            key_2: 'Parent 2',
-            value_2: '..EKG..'
-          }),
-          credentials: 'include',
-        });
-        const toolData = await response.json();
-        console.log("toolData: ", toolData);
-      } catch (error) {
-        console.log("Error: ", error)
-      };
-    }
-    fetchData();
-  };
+  // const handleCloseFormModal = () => setShowFormModal(false);
+  // const handleShowFormModal = () => setShowFormModal(true);
+  // const handleFormSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const fetchData = async () => {
+  //     try {
+  //       setShowFormModal(false);
+  //       const response = await fetch('https://devapi.mbfcorp.tools/api/tools/demo-customizer', {
+  //         method: "POST",
+  //         body: JSON.stringify({
+  //           function: `toolkit-${slug}`,
+  //           workspace_ids: '6420289752983428,6173999148361604',
+  //           key_1: 'Parent 1',
+  //           value_1: '..USM..',
+  //           key_2: 'Parent 2',
+  //           value_2: '..EKG..'
+  //         }),
+  //         credentials: 'include',
+  //       });
+  //       const toolData = await response.json();
+  //       console.log("toolData: ", toolData);
+  //     } catch (error) {
+  //       console.log("Error: ", error)
+  //     };
+  //   }
+  //   fetchData();
+  // };
 
   return (
     <Container>

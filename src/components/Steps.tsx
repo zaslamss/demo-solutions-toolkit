@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Step as StepType, StepMessage } from "../types";
+import { Step as StepType, OnSubmitAction, StepMessage } from "../types";
 import { Step } from "./Step";
 import { Modal, Button } from "react-bootstrap";
 
@@ -44,6 +44,26 @@ export const Steps = ({ steps }: StepsProps) => {
     });
   };
 
+const resolveValue = (path: string, currentStepId: string): any => {
+    const parts = path.split('.');
+
+    if (parts.length === 1) {
+        return formData[currentStepId]?.[parts[0]];
+    } else if (parts.length === 2) {
+        const [sourceId, fieldId] = parts;
+        if (formData[sourceId] !== undefined) {
+            return formData[sourceId][fieldId];
+        }
+        if (responseData[sourceId] !== undefined) {
+            if (typeof responseData[sourceId] === 'object' && responseData[sourceId] !== null) {
+                return responseData[sourceId][fieldId];
+            }
+            return undefined;
+        }
+    }
+    return undefined;
+};
+
   const handleNextStep = async (stepId: string) => {
     const step = steps[currentStepIndex];
 
@@ -53,118 +73,154 @@ export const Steps = ({ steps }: StepsProps) => {
 
     clearMessageForStep(stepId);
 
-    const willCallApi = step.onSubmit?.action === "callApi" || step.onSubmit?.action === "getSheetInfo";
-
-    if (willCallApi) {
-      setIsLoadingForStep(stepId, true);
-    }
+    setIsLoadingForStep(stepId, true);
 
     try {
-      if (step.onSubmit?.action === "callApi") {
-        const { apiEndpoint, method, inputMapping, storeResponseAs } = step.onSubmit;
+      const onSubmitActions: OnSubmitAction[] = Array.isArray(step.onSubmit)
+        ? step.onSubmit
+        : (step.onSubmit ? [step.onSubmit as OnSubmitAction] : []);
+      
+        for (const actionConfig of onSubmitActions) {
+        let shouldExecuteAction = true;
 
-        const body: Record<string, any> = {};
-        for (const [apiKey, formPath] of Object.entries(inputMapping || {})) {
-          const [sId, fieldId] = formPath.includes('.') ? formPath.split('.') : [step.id, formPath];
-          body[apiKey] = formData[sId]?.[fieldId];
-        }
-
-        if (!apiEndpoint) {
-          console.error("API endpoint is not defined");
-          setMessageForStep(stepId, "ERROR", "API endpoint is not defined.");
-          return;
-        }
-
-        let data: Record<string, any> = {};
-        const fetchOptions: RequestInit = {
-          method: method || 'POST',
-          credentials: 'include',
-        };
-
-        if (step.type === "prompt") {
-          data.promptContext = step.onSubmit.promptContext || "",
-            data.data = body;
-        } else {
-          data = body;
-        }
-
-        if (['POST', 'PUT'].includes((method || 'POST').toUpperCase())) {
-          fetchOptions.body = JSON.stringify(data);
-        }
-
-        const res = await fetch(apiEndpoint, fetchOptions);
-
-        if (!res.ok) {
-          const error = await res.json()
-          setMessageForStep(stepId, "ERROR", error.message);
-          return;
-        }
-        const result = await res.json();
-
-        if (storeResponseAs) {
-          setResponseData(prev => ({
-            ...prev,
-            [storeResponseAs]: result.data ? result.data : result
-          }));
-          const nextStep = steps[currentStepIndex + 1];
-          if (nextStep?.type === "grid" && nextStep.dataSource === storeResponseAs) {
-            setFormData(prev => ({
-              ...prev,
-              [nextStep.id]: { rows: result.rows }
-            }));
+        if (actionConfig.condition) {
+          const { when, equals } = actionConfig.condition;
+          const actualValue = resolveValue(when, step.id);
+          if (String(actualValue) !== String(equals)) {
+            shouldExecuteAction = false;
           }
-          if (step.type === "grid" && !storeResponseAs) {
-            setFormData(prev => ({
-              ...prev,
-              [nextStep.id]: { rows: result.rows }
-            }));
+        }
+
+        if (!shouldExecuteAction) {
+          continue; 
+        }
+
+        // 2. Execute Action based on type
+        if (actionConfig.action === "callApi" || actionConfig.action === "getSheetInfo") {
+          // Centralized API call logic
+          const { apiEndpoint, method, inputMapping, promptContext, storeResponseAs, prompt } = actionConfig;
+
+          const body: Record<string, any> = {};
+          for (const [apiKey, formPath] of Object.entries(inputMapping || {})) {
+              // The path can now be from current step's formData or previously stored responseData
+              const value = resolveValue(formPath as string, step.id);
+              body[apiKey] = value;
           }
-          if (result.message) {
-            setMessageForStep(stepId, "INFO", result.message);
+
+          if (!apiEndpoint) {
+            console.error(`Step ${stepId}: API endpoint is not defined for action:`, actionConfig);
+            setMessageForStep(stepId, "ERROR", `API endpoint is not defined for an action.`);
+            continue;
+          }
+
+          let dataToSend: Record<string, any> = {};
+
+          if ((step.type === "prompt" || prompt) && promptContext) {
+            dataToSend.promptContext = promptContext;
+            dataToSend.data = body;
+          } else {
+            dataToSend = body;
+          }
+
+          let finalApiEndpoint = apiEndpoint;
+          if (actionConfig.action === "getSheetInfo" && method === "GET") {
+              const sheetId = formData[step.id]?.sheetId;
+              if (!sheetId) {
+                  setMessageForStep(stepId, "ERROR", "Sheet ID is required for getSheetInfo.");
+                  throw new Error("Sheet ID is required for getSheetInfo");
+              }
+              finalApiEndpoint = `${apiEndpoint}/${sheetId}`; 
+          }
+
+
+          const fetchOptions: RequestInit = {
+            method: method || 'POST',
+            credentials: 'include',
+          };
+
+          if (['POST', 'PUT'].includes((method || 'POST').toUpperCase())) {
+            fetchOptions.body = JSON.stringify(dataToSend);
+          }
+
+          try {
+            const res = await fetch(finalApiEndpoint, fetchOptions);
+
+            if (!res.ok) {
+              const error = await res.json();
+              setMessageForStep(stepId, "ERROR", `API Error for action (${actionConfig.action}): ${error.message || JSON.stringify(error)}`);
+              continue;
+            }
+            const result = await res.json();
+
+            if (storeResponseAs) {
+              setResponseData(prev => ({
+                ...prev,
+                [storeResponseAs]: result.data ? result.data : result
+              }));
+
+              const nextStep = steps[currentStepIndex + 1];
+              if (nextStep && nextStep.type === "grid" && nextStep.dataSource === storeResponseAs) {
+                setFormData(prev => ({
+                  ...prev,
+                  [nextStep.id]: { rows: result.rows || result }
+                }));
+              }
+            }
+            if (result.message) {
+              setMessageForStep(stepId, "INFO", result.message);
+            }
+          } catch (apiError) {
+            console.error(`API call for action (${actionConfig.action}) failed:`, apiError);
+            setMessageForStep(stepId, "ERROR", `API call failed for action (${actionConfig.action}).`);
+          }
+
+        } else if (actionConfig.action === "storeLocal") {
+          const { storeDataAs, dataToStore } = actionConfig;
+
+          if (storeDataAs) {
+            let dataToStoreFinal = dataToStore;
+
+            if (typeof dataToStore === 'object' && dataToStore !== null) {
+                dataToStoreFinal = { ...dataToStore }; 
+                if (actionConfig.inputMapping) {
+                    for (const [key, path] of Object.entries(actionConfig.inputMapping)) {
+                        dataToStoreFinal[key] = resolveValue(path, step.id);
+                    }
+                }
+            } else if (typeof dataToStore === 'string' && dataToStore.startsWith('formData.')) {
+                dataToStoreFinal = resolveValue(dataToStore.replace('formData.', ''), formData[step.id] || {});
+            }
+
+            setResponseData(prev => ({
+              ...prev,
+              [storeDataAs]: dataToStoreFinal
+            }));
+            setMessageForStep(stepId, "INFO", `Using existing '${storeDataAs}' data.`);
+
+            const nextStep = steps[currentStepIndex + 1];
+            if (nextStep && nextStep.type === "grid" && nextStep.dataSource === storeDataAs) {
+                setFormData(prev => ({
+                  ...prev,
+                  [nextStep.id]: dataToStoreFinal
+                }));
+            }
+
+          } else {
+            console.warn(`Step ${stepId}: 'storeDataAs' not defined for 'storeLocal' action:`, actionConfig);
           }
         }
       }
 
-      if (step.onSubmit?.action === "getSheetInfo") {
-        const { storeResponseAs } = step.onSubmit;
-        const sheetId = formData[step.id]?.sheetId;
-        if (!sheetId) {
-          setMessageForStep(stepId, "ERROR", "Sheet ID is not defined.");
-          throw new Error("Sheet ID is not defined");
-        }
-        const res = await fetch(`https://devapi.mbfcorp.tools/sheet/${sheetId}`, {
-          method: 'GET',
-          credentials: 'include',
-        });
-        if (!res.ok) {
-          setMessageForStep(stepId, "ERROR", await res.json());
-          throw new Error("API call failed");
-        }
-        const result = await res.json();
-        if (storeResponseAs) {
-          setResponseData(prev => ({
-            ...prev,
-            [storeResponseAs]: result
-          }));
-        }
-        if (result.message) {
-          setMessageForStep(stepId, "INFO", result.message);
-        }
-      }
-
-      // Check if this is the last step
       if (currentStepIndex === steps.length - 1) {
-        setShowCompletionModal(true); // Show modal on "Submit" of the last step
+        setShowCompletionModal(true);
       } else {
-        setCurrentStepIndex(currentStepIndex + 1); // Move to next step
+        setCurrentStepIndex(currentStepIndex + 1);
       }
 
     } catch (error) {
       console.error("API call failed:", error);
     } finally {
-      if (willCallApi) {
         setIsLoadingForStep(stepId, false);
-      }
     }
   };
 

@@ -76,6 +76,22 @@ export interface ToolProps {
 }
 
 
+export interface OnSubmitAction {
+      action: string;
+      prompt?: true;
+      apiEndpoint?: string;
+      promptContext?: string;
+      method?: string;
+      inputMapping?: Record<string, any>;
+      storeResponseAs?: string;
+      condition?: {
+        when: string;
+        equals: string;
+      };
+      storeDataAs?: string;
+      dataToStore?: any;
+    }
+
 export interface Step {
     id: string;
     title: string;
@@ -95,14 +111,7 @@ export interface Step {
       options?: { value: string; label: string }[];
     }[];
     dataSource?: string;
-    onSubmit?: {
-      action: string;
-      apiEndpoint?: string;
-      promptContext?: string;
-      method?: string;
-      inputMapping?: Record<string, any>;
-      storeResponseAs?: string;
-    };
+    onSubmit?: OnSubmitAction[];
   }
 
   
