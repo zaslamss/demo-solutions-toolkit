@@ -67,11 +67,18 @@ export const Grid = ({ gridData, stepId, formData, editable, setFormData, disabl
     });
   };
 
+  const generate_uuid = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
   // Function to add a new row to the grid
   const addRow = () => {
     // Create a new row with default values based on the schema
-    // TODO: Generate unique ID for new row
-    const newRow: RowData = { id: "new_row" };
+    const newRow: RowData = { id: generate_uuid() };
     schema.forEach(field => {
       newRow[field.key] = field.type === "checkbox" ? false : "";
     });
@@ -191,3 +198,5 @@ export const Grid = ({ gridData, stepId, formData, editable, setFormData, disabl
     </>
   );
 };
+
+

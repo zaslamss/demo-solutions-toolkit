@@ -75,12 +75,14 @@ const resolveValue = (path: string, currentStepId: string): any => {
 
     setIsLoadingForStep(stepId, true);
 
+    let hasError = false;
+
     try {
       const onSubmitActions: OnSubmitAction[] = Array.isArray(step.onSubmit)
         ? step.onSubmit
         : (step.onSubmit ? [step.onSubmit as OnSubmitAction] : []);
       
-        for (const actionConfig of onSubmitActions) {
+      for (const actionConfig of onSubmitActions) {
         let shouldExecuteAction = true;
 
         if (actionConfig.condition) {
@@ -110,7 +112,8 @@ const resolveValue = (path: string, currentStepId: string): any => {
           if (!apiEndpoint) {
             console.error(`Step ${stepId}: API endpoint is not defined for action:`, actionConfig);
             setMessageForStep(stepId, "ERROR", `API endpoint is not defined for an action.`);
-            continue;
+            hasError = true;
+            break;
           }
 
           let dataToSend: Record<string, any> = {};
@@ -127,7 +130,8 @@ const resolveValue = (path: string, currentStepId: string): any => {
               const sheetId = formData[step.id]?.sheetId;
               if (!sheetId) {
                   setMessageForStep(stepId, "ERROR", "Sheet ID is required for getSheetInfo.");
-                  throw new Error("Sheet ID is required for getSheetInfo");
+                  hasError = true;
+                  break;
               }
               finalApiEndpoint = `${apiEndpoint}/${sheetId}`; 
           }
@@ -148,7 +152,8 @@ const resolveValue = (path: string, currentStepId: string): any => {
             if (!res.ok) {
               const error = await res.json();
               setMessageForStep(stepId, "ERROR", `API Error for action (${actionConfig.action}): ${error.message || JSON.stringify(error)}`);
-              continue;
+              hasError = true;
+              break;
             }
             const result = await res.json();
 
@@ -172,6 +177,8 @@ const resolveValue = (path: string, currentStepId: string): any => {
           } catch (apiError) {
             console.error(`API call for action (${actionConfig.action}) failed:`, apiError);
             setMessageForStep(stepId, "ERROR", `API call failed for action (${actionConfig.action}).`);
+            hasError = true;
+            break;
           }
 
         } else if (actionConfig.action === "storeLocal") {
@@ -188,7 +195,13 @@ const resolveValue = (path: string, currentStepId: string): any => {
                     }
                 }
             } else if (typeof dataToStore === 'string' && dataToStore.startsWith('formData.')) {
-                dataToStoreFinal = resolveValue(dataToStore.replace('formData.', ''), formData[step.id] || {});
+                dataToStoreFinal = resolveValue(dataToStore.replace('formData.', step.id + '.'), step.id);
+                if (dataToStoreFinal === undefined) {
+                    console.warn(`Step ${stepId}: Could not resolve value for 'storeLocal' action from path: ${dataToStore}`);
+                    setMessageForStep(stepId, "ERROR", `Data to store not found for '${storeDataAs}'.`);
+                    hasError = true;
+                    break;
+                }
             }
 
             setResponseData(prev => ({
@@ -207,18 +220,28 @@ const resolveValue = (path: string, currentStepId: string): any => {
 
           } else {
             console.warn(`Step ${stepId}: 'storeDataAs' not defined for 'storeLocal' action:`, actionConfig);
+            setMessageForStep(stepId, "ERROR", `'storeDataAs' not defined for 'storeLocal' action.`);
+            hasError = true;
+            break;
           }
+        }
+        if (hasError) {
+            break;
         }
       }
 
-      if (currentStepIndex === steps.length - 1) {
-        setShowCompletionModal(true);
-      } else {
-        setCurrentStepIndex(currentStepIndex + 1);
+      if (!hasError) {
+        if (currentStepIndex === steps.length - 1) {
+          setShowCompletionModal(true);
+        } else {
+          setCurrentStepIndex(currentStepIndex + 1);
+        }
       }
 
     } catch (error) {
-      console.error("API call failed:", error);
+      console.error("An unexpected error occurred during step processing:", error);
+      setMessageForStep(stepId, "ERROR", `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
+      hasError = true;
     } finally {
         setIsLoadingForStep(stepId, false);
     }

@@ -58,7 +58,7 @@ const steps: Record<string, Step[]> = {
     {
       "id": "getSheetId",
       "title": "Sheet Information",
-      "description": "Please enter the ID of the sheet you'd like to update.",
+      "description": "Enter the ID of the sheet you'd like to update.",
       "type": "form",
       "nextStepId": "getImage",
       "fields": [
@@ -79,7 +79,7 @@ const steps: Record<string, Step[]> = {
     {
       "id": "getImage",
       "title": "Upload Image",
-      "description": "Please upload the image you'd like to reference to create your sheet.",
+      "description": "Upload the image you'd like to reference to create your sheet.",
       "type": "prompt",
       "nextStepId": "confirmGrid",
       "fields": [
@@ -104,7 +104,7 @@ const steps: Record<string, Step[]> = {
     {
       "id": "confirmColumns",
       "title": "Confirm Columns",
-      "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
+      "description": "Review the generated columns below. Proceeding to the next step will create these columns. This will delete any existing columns (and data) in the sheet.",
       "type": "grid",
       "dataSource": "columns",
       "nextStepId": "confirmGrid",
@@ -137,7 +137,7 @@ const steps: Record<string, Step[]> = {
       "title": "Confirm and Create Sheet",
       "type": "grid",
       "dataSource": "gridData",
-      "description": "Review the generated rows below. Click 'Submit' to proceed.",
+      "description": "Review the generated rows below. Submit to update your sheet.",
       "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/tools/gridsnap",
@@ -369,7 +369,6 @@ const steps: Record<string, Step[]> = {
       "description": "Review the template below. Click 'Next' to proceed.",
       "type": "grid",
       "dataSource": "template",
-      // Add onSubmit if needed
     }
   ],
   "QuickSheet": [
@@ -387,12 +386,29 @@ const steps: Record<string, Step[]> = {
           "required": true
         },
         {
+          "id": "rowCount",
+          "type": "input",
+          "label": "Number of Rows",
+          "required": true,
+        },
+        {
           "id": "columnAction",
           "type": "select",
           "label": "How should we handle columns?",
           "options": [
             { "value": "create", "label": "Delete existing and create new columns" },
             { "value": "existing", "label": "Use existing column data" },
+          ],
+          "required": true
+        },
+        {
+          "id": "rowAction",
+          "type": "select",
+          "label": "How should we handle the data?",
+          "options": [
+            { "value": "create", "label": "Add new rows to the bottom of the sheet" },
+            { "value": "existing", "label": "Update existing rows" },
+            { "value": "existing", "label": "Delete existing rows and replace with new rows" },
           ],
           "required": true
         }
@@ -454,7 +470,7 @@ const steps: Record<string, Step[]> = {
     {
       "id": "confirmColumns",
       "title": "Confirm Columns",
-      "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
+      "description": "Review the generated columns below. If you selected 'Delete existing and create new columns', proceeding to the next step will create these columns. This will delete any existing columns (and data) in the sheet. If you selected 'Use existing column data', the following columns will be used to create the mock data.",
       "type": "grid",
       "editable": true,
       "dataSource": "columns",
@@ -478,11 +494,12 @@ const steps: Record<string, Step[]> = {
         "action": "callApi",
         "prompt": true,
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
-        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a percentage, it should be an integer between 0 and 100 (e.g., 50). If the column is a CHECKBOX, it should be either true or false. Return a minimum of 10 rows of data, unless otherwise specified. More rows is better, the description asks for 'detailed' - Give 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a PERCENTAGE, it should be a decimal between 0 and 1 (e.g., 0.6 without a percent symbol). If the column is a CHECKBOX, it should be either true or false. If the column represents a number or monetary value return an integer only (no additional text like $). If the column properties contains a list of options, select one of those but make it random and don't disperse evenly. Return a minimum of 20 rows unless Row count is specified. Row count: {rowCount} Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
         "method": "POST",
         "inputMapping": {
           "columns": "confirmColumns.rows",
           "prompt": "getUseCase.prompt",
+          "rowCount": "getSheetInfo.rowCount"
         },
         "storeResponseAs": "mockData"
       }]
@@ -493,7 +510,7 @@ const steps: Record<string, Step[]> = {
       "type": "grid",
       "editable": false,
       "dataSource": "mockData",
-      "description": "Review the generated rows below. Click 'Submit' to proceed.",
+      "description": "Review the generated rows below. Submit to create your sheet.",
       "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/tools/sheetgenie",
