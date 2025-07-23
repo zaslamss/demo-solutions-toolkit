@@ -164,6 +164,18 @@ export const Step: React.FC<StepProps> = ({
                   />
                 </InputGroup>
               )}
+              {field.type === "number" && (
+                <InputGroup>
+                  <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>
+                  <Form.Control
+                    type="number"
+                    value={formData[step.id]?.[field.id] || ''}
+                    required={field.required}
+                    onChange={(e) => onInputChange(step.id, field.id, e.target.value)}
+                    disabled={!isCurrentStep || isLoadingThisStep}
+                  />
+                </InputGroup>
+              )}
               {field.type === "select" && (
                 <InputGroup>
                   <InputGroup.Text id={field.id}>{field.label}</InputGroup.Text>

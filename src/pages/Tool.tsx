@@ -387,7 +387,7 @@ const steps: Record<string, Step[]> = {
         },
         {
           "id": "rowCount",
-          "type": "input",
+          "type": "number",
           "label": "Number of Rows",
           "required": true,
         },
@@ -406,9 +406,9 @@ const steps: Record<string, Step[]> = {
           "type": "select",
           "label": "How should we handle the data?",
           "options": [
-            { "value": "create", "label": "Add new rows to the bottom of the sheet" },
-            { "value": "existing", "label": "Update existing rows" },
-            { "value": "existing", "label": "Delete existing rows and replace with new rows" },
+            { "value": "add_rows", "label": "Add new rows to the bottom of the sheet" },
+            { "value": "update_rows", "label": "Update existing rows" },
+            { "value": "replace_rows", "label": "Delete all existing rows and replace with new rows" },
           ],
           "required": true
         }
@@ -513,11 +513,12 @@ const steps: Record<string, Step[]> = {
       "description": "Review the generated rows below. Submit to create your sheet.",
       "onSubmit": [{
         "action": "callApi",
-        "apiEndpoint": "https://devapi.mbfcorp.tools/tools/sheetgenie",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/tools/quicksheet",
         "method": "POST",
         "inputMapping": {
           "sheet_id": "getSheetInfo.sheetId",
           "rows": "confirmData.rows",
+          "row_action": "getSheetInfo.rowAction",
         },
       }]
     },

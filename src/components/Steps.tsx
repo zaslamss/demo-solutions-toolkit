@@ -62,12 +62,47 @@ const resolveValue = (path: string, currentStepId: string): any => {
         }
     }
     return undefined;
-};
+  };
+
+  const validateCurrentStep = (step: StepType): boolean => {
+    clearMessageForStep(step.id); // Clear previous validation messages for this step
+
+    if ((step.type === 'form' || step.type === 'prompt') && step.fields) {
+      const requiredFields = step.fields.filter(field => field.required);
+      const currentStepFormData = formData[step.id] || {};
+      const missingFields: string[] = [];
+
+      for (const field of requiredFields) {
+        const value = currentStepFormData[field.id];
+        // Check if value is empty (undefined, null, empty string, or empty array/object)
+        if (value === undefined || value === null || 
+            (typeof value === 'string' && value.trim() === '') || 
+            (Array.isArray(value) && value.length === 0) || 
+            (typeof value === 'object' && value !== null && Object.keys(value).length === 0 && !Array.isArray(value))) {
+          missingFields.push(`"${field.label || field.id}"`);
+        }
+      }
+
+      if (missingFields.length > 0) {
+        const message = `Please fill out the following required fields: ${missingFields.join(', ')}.`;
+        setMessageForStep(step.id, "ERROR", message);
+        return false; // Validation failed
+      }
+    }
+    return true; // Validation passed
+  };
 
   const handleNextStep = async (stepId: string) => {
     const step = steps[currentStepIndex];
 
     if (step.id !== stepId) {
+      return;
+    }
+
+    const isValid = validateCurrentStep(step);
+    if (!isValid) {
+      // If validation fails, do not proceed with onSubmit actions or loading state
+      // The error message is already set by validateCurrentStep
       return;
     }
 
