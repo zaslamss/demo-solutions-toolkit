@@ -225,7 +225,7 @@ export const Step: React.FC<StepProps> = ({
         {step.type === "grid" && step.dataSource && responseData[step.dataSource] && (
           <Grid
             gridData={responseData[step.dataSource]}
-            editable={step.editable}
+            editFeatures={step.editFeatures}
             stepId={step.id}
             formData={formData}
             setFormData={setFormData}

@@ -77,20 +77,40 @@ export interface ToolProps {
 
 
 export interface OnSubmitAction {
-      action: string;
-      prompt?: true;
-      apiEndpoint?: string;
-      promptContext?: string;
-      method?: string;
-      inputMapping?: Record<string, any>;
-      storeResponseAs?: string;
-      condition?: {
+    action: string;
+    prompt?: true;
+    apiEndpoint?: string;
+    promptContext?: string;
+    method?: string;
+    inputMapping?: Record<string, any>;
+    storeResponseAs?: string;
+    condition?: {
         when: string;
         equals: string;
-      };
-      storeDataAs?: string;
-      dataToStore?: any;
-    }
+    };
+    storeDataAs?: string;
+    dataToStore?: any;
+}
+
+export interface EditCondition {
+    when: string;
+    equals: string;
+}
+
+export interface EditFeatures {
+    addRow?: {
+        "enabled": boolean;
+        "condition"?: EditCondition
+    };
+    deleteRow?: {
+        "enabled": boolean;
+        "condition"?: EditCondition;
+    };
+    gridText?: {
+        "enabled": boolean;
+        "condition"?: EditCondition
+    };
+}
 
 export interface Step {
     id: string;
@@ -99,23 +119,24 @@ export interface Step {
     type: "form" | "prompt" | "grid";
     nextStepId?: string;
     editable?: boolean; // property for grid
+    editFeatures?: EditFeatures;
     fields?: { // property for form
-      id: string;
-      type: string;
-      label: string;
-      required?: boolean;
-      dependsOn?: {
-        fieldId: string;
-        optionsMap: Record<string, { value: string; label: string }[]>;
-      };
-      options?: { value: string; label: string }[];
+        id: string;
+        type: string;
+        label: string;
+        required?: boolean;
+        dependsOn?: {
+            fieldId: string;
+            optionsMap: Record<string, { value: string; label: string }[]>;
+        };
+        options?: { value: string; label: string }[];
     }[];
     dataSource?: string;
     onSubmit?: OnSubmitAction[];
-  }
+}
 
-  
+
 export interface StepMessage {
-  level: "INFO" | "WARNING" | "ERROR";
-  message: string;
+    level: "INFO" | "WARNING" | "ERROR";
+    message: string;
 }

@@ -107,7 +107,7 @@ const steps: Record<string, Step[]> = {
       "description": "Review the generated columns below. Proceeding to the next step will create these columns. This will delete any existing columns (and data) in the sheet.",
       "type": "grid",
       "dataSource": "columns",
-      "nextStepId": "confirmGrid",
+      "nextStepId": "getGridData",
       "onSubmit":[{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
@@ -117,7 +117,15 @@ const steps: Record<string, Step[]> = {
           "columns": "confirmColumns.rows"
         },
         "storeResponseAs": "columnsCreated"
-      },
+      }]
+    },
+    {
+      "id": "getGridData",
+      "title": "Retrieve Grid Data",
+      "description": "Retrieve the grid data from the image. This will be used to generate the rows of data.",
+      "type": "form",
+      "nextStepId": "confirmGrid",
+      "onSubmit": [
       {
         "action": "callApi",
         "prompt": true,
@@ -129,8 +137,7 @@ const steps: Record<string, Step[]> = {
           "image": "getImage.image"
         },
         "storeResponseAs": "gridData"
-      }
-      ]
+      }]
     },
     {
       "id": "confirmGrid",
@@ -385,12 +392,12 @@ const steps: Record<string, Step[]> = {
           "label": "Sheet ID",
           "required": true
         },
-        {
-          "id": "rowCount",
-          "type": "number",
-          "label": "Number of Rows",
-          "required": true,
-        },
+        // {
+        //   "id": "rowCount",
+        //   "type": "number",
+        //   "label": "Number of Rows",
+        //   "required": true,
+        // },
         {
           "id": "columnAction",
           "type": "select",
@@ -473,6 +480,25 @@ const steps: Record<string, Step[]> = {
       "description": "Review the generated columns below. If you selected 'Delete existing and create new columns', proceeding to the next step will create these columns. This will delete any existing columns (and data) in the sheet. If you selected 'Use existing column data', the following columns will be used to create the mock data.",
       "type": "grid",
       "editable": true,
+      "editFeatures": { // <-- ADD THIS SECTION
+        "gridText": {
+          "enabled": true,
+          "condition": {
+            "when": "getSheetInfo.columnAction", // Reference the value from the 'getSheetInfo' step
+            "equals": "create"
+          }
+        },
+        "deleteRow": {
+          "enabled": true,
+        },
+        "addRow": {
+          "enabled": true,
+          "condition": {
+            "when": "getSheetInfo.columnAction", // Reference the value from the 'getSheetInfo' step
+            "equals": "create"
+          }
+        }
+      },
       "dataSource": "columns",
       "nextStepId": "getDataPrompt",
       "onSubmit": [{
@@ -494,12 +520,11 @@ const steps: Record<string, Step[]> = {
         "action": "callApi",
         "prompt": true,
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
-        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it must be an integer (e.g., 30). If the column represents a PERCENTAGE, it should be a decimal between 0 and 1 (e.g., 0.6 without a percent symbol). If the column is a CHECKBOX, it should be either true or false. If the column represents a number or monetary value return an integer only (no additional text like $). If the column properties contains a list of options, select one of those but make it random and don't disperse evenly. Return a minimum of 20 rows unless Row count is specified. Row count: {rowCount} Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column represents a PERCENTAGE, it should be a decimal between 0 and 1 (e.g., 0.6 without a percent symbol). If the column is a CHECKBOX, it should be either true or false. If the column represents a number or monetary value return an integer only (no additional text like $). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column properties contains a list of options, select one of those but make it random and don't disperse evenly. Return a minimum of 20 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
         "method": "POST",
         "inputMapping": {
           "columns": "confirmColumns.rows",
           "prompt": "getUseCase.prompt",
-          "rowCount": "getSheetInfo.rowCount"
         },
         "storeResponseAs": "mockData"
       }]
@@ -509,6 +534,17 @@ const steps: Record<string, Step[]> = {
       "title": "Confirm and Create Sheet",
       "type": "grid",
       "editable": false,
+      "editFeatures": {
+        "addRow": {
+          "enabled": false
+        },
+        "deleteRow": {
+          "enabled": false
+        },
+        "gridText": {
+          "enabled": false
+        },
+      },
       "dataSource": "mockData",
       "description": "Review the generated rows below. Submit to create your sheet.",
       "onSubmit": [{
