@@ -527,9 +527,6 @@ const steps: Record<string, Step[]> = {
         "storeResponseAs": "columnsCreated"
       },
       {
-        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column represents a PERCENTAGE, it should be a decimal between 0 and 1 (e.g., 0.6 without a percent symbol). If the column is a CHECKBOX, it should be either true or false. If the column represents a number or monetary value return an integer only (no additional text like $). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column properties contains a list of options, select one of those but make it random and don't disperse evenly. Return 15 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
-        "method": "POST",
-
         "action": "callApi",
         "prompt": true,
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
