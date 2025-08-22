@@ -1,7 +1,12 @@
-// Override Bootstrap variables BEFORE importing Bootstrap
+// --- Imports ---
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+// --- Color Palette ---
+$purple: #8365de;
+
 $theme-colors: (
-    "primary": #7848dc,
-    "secondary": #ffffff,
+    "primary": $purple,
+    "secondary": #6c757d,
     "success": #00b074,
     "danger": #e63757,
     "warning": #f6c343,
@@ -10,28 +15,216 @@ $theme-colors: (
     "dark": #12263f,
 );
 
-// Override fonts
-$font-family-base: 'Inter', sans-serif; // or any font you prefer
+// --- Typography ---
+$font-family-base: 'Inter', sans-serif;
+$headings-font-weight: 700;
 
-.btn-primary {
-    background: linear-gradient(90deg, #EAE3FF 0%, #F2F6FF 100%);
-    border: none !important;
-    color: black !important;
-    &:hover {
-        background: linear-gradient(90deg, #C4B4FF 0%, #DCE4FF 100%);
-    }
-}
+// --- Components ---
+$border-radius: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-sm: 0.4rem;
+$input-focus-box-shadow: 0 0 0 0.25rem rgba($purple, 0.25);
 
-.btn-secondary {
-    border: 1px solid #EAE3FF !important;
-    &:hover {
-        background: linear-gradient(90deg, #EAE3FF 0%, #F2F6FF 100%);
-    }
+// --- Bootstrap Imports ---
+@import "bootstrap/scss/bootstrap";
+
+
+// --- General Layout ---
+body {
+  background-color: $gray-100;
+  color: $gray-800;
 }
 
 .navbar {
     background: linear-gradient(90deg, #EAE3FF 0%, #F2F6FF 100%);
+    border-bottom: 1px solid $gray-200;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.07);
+}
+
+.card-header {
+    background-color: #ffffff !important;
+    font-weight: 500;
+}
+
+// --- Buttons ---
+.btn {
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    padding: 0.6rem 1.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #EAE3FF 0%, #F2F6FF 100%);
+    background-size: 200% auto;
+    color: $gray-700 !important;
+    border: 1px solid #EAE3FF !important;
+
+    &:hover {
+        background-position: right center;
+        box-shadow: 0 0.25rem 0.75rem rgba($purple, 0.15);
+        transform: translateY(-2px);
+    }
+}
+
+.btn-secondary {
+    background-color: #ffffff;
+    border-color: $gray-300 !important;
+    color: $gray-700 !important;
+
+    &:hover {
+        background-color: $gray-100;
+        border-color: $gray-400 !important;
+    }
+}
+
+.btn-secondary:disabled {
+    background: $gray-100 !important;
+    border-color: $gray-200 !important;
+    color: $gray-400 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.btn-icon-minimal {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin-top: 0.5rem;
+    color: $secondary;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: rgba($danger, 0.1);
+        color: $danger;
+    }
+}
+
+// --- Forms ---
+.form-control, .form-select {
+    border-color: $gray-200;
+    padding: 0.6rem 1rem;
+    &:focus {
+        border-color: $purple;
+    }
+}
+
+// --- Progress Stepper ---
+.progress-tracker {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100px;
+}
+
+.step-number {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.step-title {
+    font-size: 0.8rem;
+    color: $secondary;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+.step-connector {
+    flex-grow: 1;
+    height: 2px;
+    background-color: $gray-200;
+    margin: 0 -1rem;
+    position: relative;
+    top: 1.25rem;
+
+    &::before {
+      content: '';
+      display: block;
+      width: 0; 
+      height: 100%;
+      background-color: $purple; 
+      transition: width 0.4s ease-in-out;
+    }
+}
+
+.step-item--completed + .step-connector::before {
+    width: 100%;
+}
+
+.step-item--upcoming {
+    .step-number {
+        border: 2px solid $gray-300;
+        color: $gray-500;
+    }
+    .step-title {
+      color: $gray-500;
+    }
+}
+
+.step-item--active {
+    .step-number {
+        background-color: $purple;
+        color: #fff;
+        border: 2px solid $purple;
+    }
+    .step-title {
+        color: $purple;
+        font-weight: 700;
+    }
+}
+
+.step-item--completed {
+    .step-number {
+        background-color: $gray-300;
+        color: $gray-700;
+        border: 2px solid $gray-300;
+    }
+    .step-title {
+        color: $gray-700;
+    }
 }
 
 
-@import "bootstrap/scss/bootstrap";
+.success-icon {
+    color: #00b074;
+    font-size: 4rem;
+}
+
+.success-step-container,
+.error-step-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0;
+}
+
+.error-icon {
+    color: #e63757;
+    font-size: 4rem;
+}

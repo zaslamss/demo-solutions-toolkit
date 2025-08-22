@@ -1,20 +1,12 @@
-// React Imports
 import { Routes, Route, Navigate } from 'react-router-dom';
-
-// Pages
 import { Dashboard } from './pages/Dashboard'
 import { Login } from './pages/Login';
-import { Tool } from './pages/Tool';
 import { Settings } from './pages/Settings';
-
-// Components
 import { ProtectedRoute } from './auth/ProtectedRoute';
+import { DynamicWizard } from './pages/DynamicWizard';
 import { NavBar } from './components/NavBar';
-
-// Styles
+import { ToolProvider } from './components/ToolContext';
 import './Styles.scss'
-// import 'bootstrap/dist/css/bootstrap.min.css';
-// import './App.css';
 
 function App() {
   return (
@@ -34,8 +26,10 @@ function App() {
           path="/tools/:slug"
           element={
             <ProtectedRoute>
-              <NavBar />
-              <Tool />
+              <ToolProvider>
+                <NavBar />
+                <DynamicWizard />
+              </ToolProvider>
             </ProtectedRoute>
           } />
           <Route

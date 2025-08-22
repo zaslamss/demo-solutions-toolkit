@@ -112,6 +112,15 @@ export interface EditFeatures {
     };
 }
 
+// Represents the configuration for polling the workflow status
+export interface PollingConfig {
+  apiEndpoint: string;
+  method: "GET" | "POST";
+  interval: number; // Polling interval in milliseconds
+  successStatus: string; // The status string that indicates success
+  failureStatus: string; // The status string that indicates failure
+}
+
 export interface Step {
     id: string;
     title: string;
@@ -132,7 +141,8 @@ export interface Step {
         options?: { value: string; label: string }[];
     }[];
     dataSource?: string;
-    onSubmit?: OnSubmitAction[];
+    onSubmit?: OnSubmitAction;
+    polling?: PollingConfig;
 }
 
 

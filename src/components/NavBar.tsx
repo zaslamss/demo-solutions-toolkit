@@ -18,7 +18,7 @@ export const NavBar = () => {
   }
 
   return (
-    <Navbar expand="sm" className="navbar-background primary mb-3">
+    <Navbar expand="sm" className="navbar primary mb-3">
       <Container fluid>
         <Navbar.Brand href="/">Demo Solutions Toolkit</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />

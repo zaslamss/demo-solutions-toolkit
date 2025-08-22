@@ -4,7 +4,7 @@ import { Container, Spinner } from "react-bootstrap";
 // import { DynamicFormModal } from "../components/DynamicFormModal";
 // import { Description } from "../components/Description";
 // import Runs from "../components/Runs";
-import { Steps } from "../components/Steps";
+import { Steps } from "../components/StepsNew";
 import { ToolProps, Step } from "../types";
 
 
@@ -108,7 +108,7 @@ const steps: Record<string, Step[]> = {
       "type": "grid",
       "dataSource": "columns",
       "nextStepId": "getGridData",
-      "onSubmit":[{
+      "onSubmit": [{
         "action": "callApi",
         "apiEndpoint": "https://devapi.mbfcorp.tools/create-columns",
         "method": "POST",
@@ -126,18 +126,18 @@ const steps: Record<string, Step[]> = {
       "type": "form",
       "nextStepId": "confirmGrid",
       "onSubmit": [
-      {
-        "action": "callApi",
-        "prompt": true,
-        "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
-        "promptContext": "Retrieve the grid data from the image provided. Ignore the column header row. If the data type is a DATE, always return DATE in the format YYYY-MM-DD (ISO 8601). If the data type is a DATETIME, always return DATETIMEs in the format YYYY-MM-DDTHH:MM:SSZ (ISO 8601, UTC). If it's a CONTACT_LIST, return a valid email address. If you're not able to determine what the email address is return a placeholder in the format visible_name@example.com.",
-        "method": "POST",
-        "inputMapping": {
-          "columns": "confirmColumns.rows",
-          "image": "getImage.image"
-        },
-        "storeResponseAs": "gridData"
-      }]
+        {
+          "action": "callApi",
+          "prompt": true,
+          "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
+          "promptContext": "Retrieve the grid data from the image provided. Ignore the column header row. If the data type is a DATE, always return DATE in the format YYYY-MM-DD (ISO 8601). If the data type is a DATETIME, always return DATETIMEs in the format YYYY-MM-DDTHH:MM:SSZ (ISO 8601, UTC). If it's a CONTACT_LIST, return a valid email address. If you're not able to determine what the email address is return a placeholder in the format visible_name@example.com.",
+          "method": "POST",
+          "inputMapping": {
+            "columns": "confirmColumns.rows",
+            "image": "getImage.image"
+          },
+          "storeResponseAs": "gridData"
+        }]
     },
     {
       "id": "confirmGrid",
@@ -209,7 +209,7 @@ const steps: Record<string, Step[]> = {
       "description": "Review the generated columns below. You can edit the names and types of the columns. If your sheet currently has columns defined, this will be deleted. Click 'Next' to proceed.",
       "type": "grid",
       "editable": true,
-"editFeatures": {
+      "editFeatures": {
         "gridText": {
           "enabled": true,
         },
@@ -530,7 +530,7 @@ const steps: Record<string, Step[]> = {
         "action": "callApi",
         "prompt": true,
         "apiEndpoint": "https://devapi.mbfcorp.tools/gemini-prompt",
-        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column represents a PERCENTAGE, it should be a decimal between 0 and 1 (e.g., 0.6 without a percent symbol). If the column is a CHECKBOX, it should be either true or false. If the column represents a number or monetary value return an integer only (no additional text like $). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column properties contains a list of options, select one of those but make it random and don't disperse evenly. Return 10 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
+        "promptContext": "Follow these instructions carefully: You will receive a list of column data that belong to a Smartsheet. Each column data has a column_name and a column_type. You must generate a list of dictionaries, where each dictionary represents a row of data for the Smartsheet. The keys of the dictionary should match the column names, and the values should be examples of the data you want to include in each column. DATE should be formatted as YYYY-MM-DD (ISO 8601). DATETIME should be formatted as YYYY-MM-DDTHH:MM:SSZ (ISO 8601) else blank. CONTACT_LIST should be a valid email address. (e.g., 'johndoe@example.com'). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column represents a PERCENTAGE, it should be a decimal between 0 and 1 (e.g., 0.6 without a percent symbol). If the column is a CHECKBOX, it should be either true or false. If the column represents a number or monetary value return an integer only (no additional text like $). If the column is a DURATION, it MUST be an integer followed by the letter d. If the column properties contains a list of options, select one of those but make it random and don't disperse evenly. Return 15 rows. Column Data: {columns}. User Description of Data: {prompt}. Generate the rows of data and return them as a JSON array.",
         "method": "POST",
         "inputMapping": {
           "columns": "confirmColumns.rows",
@@ -538,6 +538,135 @@ const steps: Record<string, Step[]> = {
         },
         "storeResponseAs": "mockData"
       }]
+    },
+    {
+      "id": "confirmData",
+      "title": "Confirm and Create Sheet",
+      "type": "grid",
+      "editable": false,
+      "editFeatures": {
+        "addRow": {
+          "enabled": false
+        },
+        "deleteRow": {
+          "enabled": false
+        },
+        "gridText": {
+          "enabled": false
+        },
+      },
+      "dataSource": "mockData",
+      "description": "Review the generated rows below. Submit to create your sheet.",
+      "onSubmit": [{
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/tools/quicksheet",
+        "method": "POST",
+        "inputMapping": {
+          "sheet_id": "getSheetInfo.sheetId",
+          "rows": "confirmData.rows",
+          "row_action": "getSheetInfo.rowAction",
+        },
+      }]
+    },
+
+  ],
+  "Step Functions Test": [
+    {
+      "id": "getSheetInfo",
+      "title": "Get Sheet Information",
+      "description": "Fill in the following fields.",
+      "type": "form",
+      "nextStepId": "getUseCase",
+      "fields": [
+        {
+          "id": "sheetId",
+          "type": "input",
+          "label": "Sheet ID",
+          "required": true
+        }
+      ],
+      "onSubmit":
+      {
+        "action": "callApi",
+        "storeResponseAs": "sheetInfo",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/start-workflow",
+        "method": "POST",
+        "inputMapping": {
+          "sheetId": "getSheetInfo.sheetId",
+        }
+      },
+      "polling": {
+        "apiEndpoint": "https://devapi.mbfcorp.tools/get-workflow-status",
+        "method": "POST",
+        "interval": 3000,
+        "successStatus": "SUCCEEDED",
+        "failureStatus": "FAILED"
+      }
+
+    },
+    {
+      "id": "getUseCase",
+      "title": "Describe Your Use Case",
+      "description": "Describe the use case for which you'd like to generate mock data for. Be as specific as possible.",
+      "type": "prompt",
+      "nextStepId": "confirmColumns",
+      "fields": [
+        {
+          "id": "prompt",
+          "type": "textarea",
+          "label": "Prompt",
+          "required": true
+        }
+      ],
+      "polling": {
+        "apiEndpoint": "https://devapi.mbfcorp.tools/get-workflow-status",
+        "method": "POST",
+        "interval": 5000,
+        "successStatus": "SUCCEEDED",
+        "failureStatus": "FAILED"
+      },
+      "onSubmit": 
+        {
+          "action": "callApi",
+          "apiEndpoint": "https://devapi.mbfcorp.tools/workflow-resume",
+          "promptContext": "I am creating a Smartsheet sheet for a {prompt} use case. Please provide a list of column headers that would be useful information for me to track on this sheet.",
+          "method": "POST",
+          "inputMapping": {
+            "prompt": "getUseCase.prompt",
+            "promptContext": "I am creating a Smartsheet sheet for a {prompt} use case. Please provide a list of column headers that would be useful information for me to track on this sheet.",
+
+          },
+          "storeResponseAs": "columns"
+        },
+    },
+    {
+      "id": "confirmColumns",
+      "title": "Confirm Columns",
+      "description": "Review the generated columns below. If you selected 'Delete existing and create new columns', proceeding to the next step will create these columns. This will delete any existing columns (and data) in the sheet. If you selected 'Use existing column data', the following columns will be used to create the mock data.",
+      "type": "grid",
+      "editFeatures": {
+        "addRow": {
+            "enabled": true
+        },
+        "deleteRow": {
+            "enabled": true
+        },
+        "gridText": {
+            "enabled": true
+        }
+      },
+      "dataSource": "columns",
+      "nextStepId": "confirmData",
+      "onSubmit": {
+        "action": "callApi",
+        "apiEndpoint": "https://devapi.mbfcorp.tools/workflow-resume",
+        "method": "POST",
+        "inputMapping": {
+          "sheet_id": "getSheetInfo.sheetId",
+          "columns": "confirmColumns.rows",
+        },
+        "storeResponseAs": "columnsCreated"
+      },
     },
     {
       "id": "confirmData",
@@ -583,7 +712,7 @@ export const Tool = () => {
     if (slug) {
       const fetchData = async () => {
         try {
-          const response = await fetch(`https://devapi.mbfcorp.tools/api/tools/${slug}`, {
+          const response = await fetch(`https://devapi.mbfcorp.tools/tools/${slug}`, {
             credentials: 'include',
           });
           const toolData = await response.json();
@@ -595,6 +724,8 @@ export const Tool = () => {
       fetchData();
     }
   }, []);
+
+  console.log("ToolData", tool)
 
   // const handleCloseFormModal = () => setShowFormModal(false);
   // const handleShowFormModal = () => setShowFormModal(true);
@@ -654,7 +785,7 @@ export const Tool = () => {
           )} */}
           <h4 className="mb-3 fw-bold text-primary">{tool.name}</h4>
           <p>{tool.summary}</p>
-          <Steps steps={steps[tool.name]} />
+          <Steps workflowDefinition={steps[tool.name]} />
         </>
 
       ) : <Spinner animation="border" variant="primary" />}
