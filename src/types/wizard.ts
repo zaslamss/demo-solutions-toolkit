@@ -29,6 +29,7 @@ export interface WorkerAction extends BaseAction {
     outputKey: string;
   };
   onSuccess: OnSuccessRule[];
+  onError?: { goToStep: string; }
 }
 
 export interface NavigationAction extends BaseAction {

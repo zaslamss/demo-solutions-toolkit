@@ -7,17 +7,26 @@ interface StartRunResponse {
   runId: string;
 }
 
-interface JobStatusResponse {
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
-  result?: {
-    nextStepId: string;
-    data: any;
-  };
-  errorDetails?: {
-    message: "string";
-  }
+export interface RunResponse {
+  runId: string;
+  toolId: string;
+  userId: string;
+  createdAt: number;
+  updatedAt: number;
+  currentStepId: string;
+  formData: Record<string, any>;
+  runData: Record<string, any>;
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  toolDefinition: ToolDefinition;
+  log: any[];
+  
+  jobHistory?: Record<string, {
+    status: 'PENDING' | 'COMPLETED' | 'FAILED';
+    actionId: string;
+    outputKey?: string;
+    error?: string;
+  }>;
 }
-
 export const apiClient = {
   /**
    * Fetches a tool's definition.
@@ -79,7 +88,7 @@ export const apiClient = {
    * @param endpoint - The full path for the action, including the runId.
    * @param payload - The data needed by the orchestrator.
    */
-  post: async (endpoint: string, payload: any): Promise<{ jobId: string }> => {
+  post: async (endpoint: string, payload: any): Promise<{ message: string }> => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       credentials: "include",
@@ -93,19 +102,16 @@ export const apiClient = {
   },
 
   /**
-   * Polls for the status of a long-running job.
-   * (We haven't built this backend yet, so it's a placeholder).
-   * @param runId - The ID of the run this job belongs to.
-   * @param jobId - The ID of the specific job to check.
+   * Polls for the status of an entire run by fetching the Run object.
+   * @param runId - The ID of the run to fetch.
    */
-  getJobStatus: async (runId: string, jobId: string): Promise<JobStatusResponse> => {
-    // When you build the status endpoint, this will be a real fetch call:
-    const response = await fetch(`${API_BASE_URL}/runs/${runId}/jobs/${jobId}`, {
+  getRun: async (runId: string): Promise<RunResponse> => {
+    const response = await fetch(`${API_BASE_URL}/runs/${runId}`, {
       credentials: "include"
     });
     if (!response.ok) {
-      console.error("API Error fetching job status:", await response.text());
-      throw new Error(`Failed to fetch job status: ${response.statusText}`);
+      console.error("API Error fetching run status:", await response.text());
+      throw new Error(`Failed to fetch run status: ${response.statusText}`);
     }
     return await response.json();
   }

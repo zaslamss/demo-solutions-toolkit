@@ -2,7 +2,7 @@ import { createContext, useState, useContext, ReactNode, useCallback } from 'rea
 import { ToolDefinition, WizardStep, Action } from '../types';
 import { apiClient } from './ApiClient';
 import { useInterval } from './UseInterval';
-import { checkDisplayCondition } from './utils/conditions';
+import { checkDisplayCondition } from '../utils/conditions';
 
 interface ToolState {
   runId: string | null;
@@ -31,11 +31,12 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
   const [currentStepId, setCurrentStepId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [jobResults, setJobResults] = useState<Record<string, any>>({});
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [pollingActionId, setPollingActionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [stepHistory, setStepHistory] = useState<string[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [pollingAction, setPollingAction] = useState<Action | null>(null);
 
   const resetTool = useCallback(() => {
     setRunId(null);
@@ -43,7 +44,7 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
     setCurrentStepId(null);
     setFormData({});
     setJobResults({});
-    setActiveJobId(null);
+    setPollingActionId(null);
     setError(null);
     setStepHistory([]);
     setValidationErrors({});
@@ -96,16 +97,16 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
     setFormData(prev => ({ ...prev, ...data }));
   };
 
+  const currentStep = toolDefinition?.steps.find(s => s.stepId === currentStepId) || null;
+
   const executeAction = async (action: Action) => {
     const errors: Record<string, string> = {};
     if (currentStep && currentStep.type === 'form' && currentStep.fields) {
       
-      // 1. First, determine which fields are actually visible to the user.
       const visibleFields = currentStep.fields.filter(field =>
         checkDisplayCondition(field.displayCondition, formData)
       );
 
-      // 2. Now, loop over ONLY the visible fields to check for required values.
       for (const field of visibleFields) {
         if (field.required) {
           const value = formData[field.id];
@@ -119,20 +120,16 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       console.log("Validation failed on visible fields:", errors);
-      return; // Stop execution
+      return;
     }
 
-    // If validation passes, clear any previous errors
     setValidationErrors({});
-    
-    // --- 2. EXISTING ACTION LOGIC ---
     setIsLoading(true);
     setError(null);
 
     try {
       let activeRunId = runId;
 
-      // --- "Lazy Create" Logic: Create the run on the first action ---
       if (!activeRunId) {
         if (!toolDefinition) throw new Error("Cannot start run without a tool definition.");
         
@@ -144,14 +141,19 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
       
       if (!activeRunId) throw new Error("Failed to create or retrieve a runId.");
 
-      // --- Proceed with the action using the guaranteed activeRunId ---
       switch (action.type) {
         case 'worker': {
-          const response = await apiClient.post(`/runs/${activeRunId}/actions`, { 
-            actionId: action.actionId, formData, runData: jobResults 
+          const stepId = currentStep?.stepId;
+          if (!stepId) {
+            throw new Error("Cannot execute worker without a current step ID.");
+          }
+          await apiClient.post(`/runs/${activeRunId}/actions`, { 
+            actionId: action.actionId, 
+            formData: { ...formData, currentStepId: stepId }, 
+            runData: jobResults 
           });
-          setActiveJobId(response.jobId);
-          // isLoading stays true until the poller finishes
+          setPollingAction(action);
+          setPollingActionId(action.actionId);
           break;
         }
         case 'navigation': {
@@ -160,7 +162,7 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
             formData
           });
           navigateToStep(action.onSuccess.goToStep);
-          setIsLoading(false); // Action is complete
+          setIsLoading(false);
           break;
         }
       }
@@ -172,54 +174,43 @@ export const ToolProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useInterval(async () => {
-    if (!activeJobId || !runId) return;
+    if (!pollingActionId || !runId) return;
 
     try {
-      const status = await apiClient.getJobStatus(runId, activeJobId);
+      const run = await apiClient.getRun(runId);
 
-      // Find the action that started this job
-      const currentAction = (currentStep as any)?.actions.find(
-        (a: Action) => a.type === 'worker' && a.actionId === (currentStep as any)?.lastActionId // We might need to store lastActionId
-      ) || (currentStep as any)?.actions.find((a: Action) => a.type === 'worker'); // Fallback
+      const jobStatus = run.jobHistory?.[pollingActionId]
 
-      // --- THIS IS THE UPDATED LOGIC ---
-      if (status.status === 'COMPLETED' && status.result) {
-        // --- SUCCESS PATH (no changes here) ---
-        const { nextStepId, data } = status.result;
-        if (currentAction && data) {
-          setJobResults(prev => ({ ...prev, [currentAction.backend.outputKey]: data }));
+      if (jobStatus?.status === 'COMPLETED') {
+        console.log(`Job ${pollingActionId} completed successfully. Stopping poll.`);
+        setPollingActionId(null);
+        setPollingAction(null);
+        setFormData(run.formData);
+        setJobResults(run.runData);
+        navigateToStep(run.currentStepId);
+        setIsLoading(false);
+
+      } else if (jobStatus?.status === 'FAILED') {
+        let errorStepId = "error-step"
+        if (pollingAction && pollingAction.type === 'worker') {
+          errorStepId = pollingAction.onError?.goToStep || 'generic-error-step';
         }
-        navigateToStep(nextStepId);
-        setActiveJobId(null);
+        console.error("Job failed with details:", jobStatus.error);
+        setPollingActionId(null);
+        setPollingAction(null)
+        setError(jobStatus.error || "An unknown job error occurred.");
         setIsLoading(false);
-
-      } else if (status.status === 'FAILED') {
-        // --- FAILURE PATH ---
-        console.error("Job failed with details:", status.errorDetails);
-        
-        // 1. Stop polling and loading
-        setActiveJobId(null);
-        setIsLoading(false);
-        
-        // 2. Set the global error message
-        const errorMessage = status.errorDetails?.message || 'An unknown error occurred on the backend.';
-        setError(errorMessage);
-
-        // 3. Find the correct error step from the JSON definition
-        const errorStepId = currentAction?.onError?.goToStep || 'generic-error-step'; // Use a fallback
         navigateToStep(errorStepId);
       }
-      // If status is 'PENDING', we do nothing and the interval continues.
 
     } catch (err) {
       console.error("Polling failed:", err);
-      setError("Failed to get job status.");
-      setActiveJobId(null);
+      setError("Failed to get run status.");
+      setPollingActionId(null);
+      setPollingAction(null);
       setIsLoading(false);
     }
-  }, activeJobId ? 4000 : null);
-
-  const currentStep = toolDefinition?.steps.find(s => s.stepId === currentStepId) || null;
+  }, pollingActionId ? 4000 : null);
   
   const value = {
     runId,

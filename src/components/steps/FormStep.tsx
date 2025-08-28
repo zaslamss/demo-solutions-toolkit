@@ -3,7 +3,7 @@ import { useTool } from '../ToolContext';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
 import { FormStep as FormStepType, FormField } from '../../types';
 import EditableGrid from '../EditableGrid';
-import { checkDisplayCondition } from '../utils/conditions'
+import { checkDisplayCondition } from '../../utils/conditions'
 
 const FormFieldRenderer = ({ field }: { field: FormField }) => {
   const { formData, jobResults, validationErrors, updateFormField } = useTool();

@@ -1,14 +1,11 @@
-import { useEffect } from 'react';
-import { useTool } from '../ToolContext'; 
+import { useTool } from '../ToolContext';
 import { WizardStep } from '../../types';
 import { Button } from 'react-bootstrap';
-import { CheckCircleFill } from 'react-bootstrap-icons';
+import { CheckCircleFill, BoxArrowUpRight } from 'react-bootstrap-icons';
 
 const SuccessStep = ({ step }: { step: WizardStep }) => {
-  const { resetTool, toolDefinition } = useTool();
-  useEffect(() => {
-    localStorage.removeItem('toolSessionState');
-  }, []);
+  const { resetTool, toolDefinition, jobResults } = useTool();
+  const permalinks = jobResults.permalinks || [];
 
   const handleStartAnother = () => {
     if (toolDefinition) {
@@ -21,6 +18,18 @@ const SuccessStep = ({ step }: { step: WizardStep }) => {
       <CheckCircleFill className="success-icon" />
       <h3 className="mt-3">{step.title}</h3>
       <p className="text-muted mt-2">{step.content}</p>
+      {permalinks.length > 0 && (
+        <ul>
+          {permalinks.map((link: string, index: number) => (
+            <li className="d-flex" key={index}>
+              <BoxArrowUpRight className="me-2" />
+              <a href={link} target="_blank" rel="noopener noreferrer">
+                {link}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
       <Button
         variant="primary"
         className="mt-4"

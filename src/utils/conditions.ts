@@ -1,5 +1,5 @@
 
-import { Condition, FormData } from '../../types'; // Adjust path and make sure FormData is exported from types.ts
+import { Condition, FormData } from '../types';
 
 /**
  * Evaluates a display condition against the current form data.

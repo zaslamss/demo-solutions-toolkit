@@ -1,13 +1,6 @@
-// React Imports
 import { useEffect, useState } from "react";
-
-// Bootstrap Imports
 import { Container, Spinner } from "react-bootstrap";
-
-// Components
 import { ToolCard } from "../components/ToolCard";
-
-// Types
 import { ToolSummaryProps } from "../types";
 
 export const Dashboard = () => {
