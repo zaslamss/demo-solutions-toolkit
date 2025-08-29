@@ -1,7 +1,7 @@
 import { Button, Container } from "react-bootstrap";
 
 export const Settings = () => {
-    const googleOAuthUrl = process.env.REACT_APP_GOOGLE_OAUTH_URL;
+    const googleOAuthUrl = import.meta.env.VITE_GOOGLE_OAUTH_URL
 
     console.log(googleOAuthUrl);
     return (
